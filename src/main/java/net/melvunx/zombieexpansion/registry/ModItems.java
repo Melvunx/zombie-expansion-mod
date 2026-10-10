@@ -1,7 +1,9 @@
 package net.melvunx.zombieexpansion.registry;
 
+import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.melvunx.zombieexpansion.ZombieExpansion;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemGroups;
 import net.minecraft.item.SpawnEggItem;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
@@ -22,5 +24,8 @@ public final class ModItems {
 	}
 
 	public static void register() {
+		// Sans ça, l'œuf existe mais n'apparaît dans aucun onglet du mode créatif.
+		ItemGroupEvents.modifyEntriesEvent(ItemGroups.SPAWN_EGGS)
+			.register(entries -> entries.add(FROZEN_ZOMBIE_SPAWN_EGG));
 	}
 }
