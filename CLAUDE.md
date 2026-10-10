@@ -17,7 +17,8 @@ Toutes les commandes passent par le wrapper Gradle (`./gradlew`, ou `gradlew.bat
 
 - Il n'y a pas de tests automatisés (pas de `src/test`) : la validation se fait en jeu via `runClient`.
 - `gradle.properties` centralise les versions (Minecraft, Yarn, Loader, Fabric API) ; `${version}` est injecté dans `fabric.mod.json` par `processResources`.
-- La CI GitHub (`.github/workflows/build.yml`) build avec JDK 25, mais le code cible Java 21 (`options.release = 21`).
+- **Gradle doit tourner sur un JDK 25** (Fabric Loom 1.18 l'exige), alors que le code cible Java 21 (`options.release = 21`). Avec un JDK 21 : « Dependency requires at least JVM runtime version 25 ». La CI GitHub utilise déjà JDK 25.
+- Depuis WSL il n'y a pas de `java` : lancer Gradle côté Windows, par ex. `cmd.exe /c "set JAVA_HOME=C:\Program Files\Java\jdk-25.0.2&& gradlew.bat runDatagen --console=plain"`.
 
 ## Contexte
 
