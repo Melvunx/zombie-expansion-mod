@@ -3,15 +3,11 @@
 	"id": "zombie_expansion",
 	"version": "${version}",
 	"name": "Zombie Expansion",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"description": "Adds many new zombie variants unique to each biome and cave, with new abilities, hordes, rival factions and zombie raids.",
 	"authors": [
-		"Me!"
+		"melvunx"
 	],
-	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
-	},
-	"license": "CC0-1.0",
+	"license": "MIT",
 	"icon": "assets/zombie_expansion/icon.png",
 	"environment": "*",
 	"entrypoints": {
