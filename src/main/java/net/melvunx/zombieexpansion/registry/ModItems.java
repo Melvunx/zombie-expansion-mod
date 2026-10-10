@@ -1,0 +1,26 @@
+package net.melvunx.zombieexpansion.registry;
+
+import net.melvunx.zombieexpansion.ZombieExpansion;
+import net.minecraft.item.Item;
+import net.minecraft.item.SpawnEggItem;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
+
+/** Registre des objets du mod (pour l'instant : les œufs d'apparition). */
+public final class ModItems {
+	// Les deux entiers sont les couleurs RVB de la base et des taches de l'œuf.
+	public static final SpawnEggItem FROZEN_ZOMBIE_SPAWN_EGG = register(
+		"frozen_zombie_spawn_egg",
+		new SpawnEggItem(ModEntities.FROZEN_ZOMBIE, 0x9FD3E6, 0xE8F6FB, new Item.Settings())
+	);
+
+	private ModItems() {
+	}
+
+	private static <T extends Item> T register(String name, T item) {
+		return Registry.register(Registries.ITEM, ZombieExpansion.id(name), item);
+	}
+
+	public static void register() {
+	}
+}

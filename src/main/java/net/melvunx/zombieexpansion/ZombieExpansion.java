@@ -2,6 +2,8 @@ package net.melvunx.zombieexpansion;
 
 import net.fabricmc.api.ModInitializer;
 
+import net.melvunx.zombieexpansion.registry.ModEntities;
+import net.melvunx.zombieexpansion.registry.ModItems;
 import net.minecraft.util.Identifier;
 
 import org.slf4j.Logger;
@@ -21,7 +23,11 @@ public class ZombieExpansion implements ModInitializer {
 		// However, some things (like resources) may still be uninitialized.
 		// Proceed with mild caution.
 
-		LOGGER.info("Hello Fabric world!");
+		// Ordre important : les entités avant les objets (l'œuf référence le type d'entité).
+		ModEntities.register();
+		ModItems.register();
+
+		LOGGER.info("Zombie Expansion loaded");
 	}
 
 	public static Identifier id(String path) {
