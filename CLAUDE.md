@@ -37,7 +37,7 @@ Toutes les commandes passent par le wrapper Gradle (`./gradlew`, ou `gradlew.bat
 | Mappings | Yarn (noms de classes Yarn : `ZombieEntity`, `ActiveTargetGoal`, etc.) |
 | IDE | IntelliJ IDEA |
 | Modèles / textures | Blockbench |
-| Animations (optionnel) | GeckoLib, à décider avant de créer les premiers modèles animés |
+| Animations | **GeckoLib 4.9.3** (`geckolib-fabric-1.21.1`, dépôt Cloudsmith, déclaré dans `fabric.mod.json` en `depends`) |
 
 - **mod_id** : `zombie_expansion` (ne plus le changer)
 - **Package racine** : `net.melvunx.zombieexpansion`
