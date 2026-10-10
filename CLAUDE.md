@@ -1,6 +1,23 @@
-# CLAUDE.md — Zombie Expansion
+# CLAUDE.md
 
-Ce fichier donne le contexte du projet à Claude (et à tout contributeur) : vision, spécifications techniques, conventions et feuille de route.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+Ce fichier donne le contexte du projet Zombie Expansion à Claude (et à tout contributeur) : vision, spécifications techniques, conventions et feuille de route.
+
+## Commandes
+
+Toutes les commandes passent par le wrapper Gradle (`./gradlew`, ou `gradlew.bat` sous Windows) :
+
+| Commande | Rôle |
+|---|---|
+| `./gradlew build` | Compile, remappe et produit les jars dans `build/libs/` (c'est ce que lance la CI) |
+| `./gradlew runClient` | Lance Minecraft client avec le mod (dossier `run/`) |
+| `./gradlew runServer` | Lance un serveur dédié de test |
+| `./gradlew runDatagen` | Régénère `src/main/generated/` à partir des providers |
+
+- Il n'y a pas de tests automatisés (pas de `src/test`) : la validation se fait en jeu via `runClient`.
+- `gradle.properties` centralise les versions (Minecraft, Yarn, Loader, Fabric API) ; `${version}` est injecté dans `fabric.mod.json` par `processResources`.
+- La CI GitHub (`.github/workflows/build.yml`) build avec JDK 25, mais le code cible Java 21 (`options.release = 21`).
 
 ## Contexte
 
@@ -25,32 +42,54 @@ Ce fichier donne le contexte du projet à Claude (et à tout contributeur) : vis
 - **mod_id** : `zombie_expansion` (ne plus le changer)
 - **Package racine** : `net.melvunx.zombieexpansion`
 - **Auteur** : melvunx · **Licence** : MIT
-- **Environnements** : logique commune côté `main` ; rendu, modèles et renderers côté `client` (split sources Loom).
+- **Entrées dans `fabric.mod.json`** : `main` (`ZombieExpansion`) et `fabric-datagen` (`ZombieExpansionDataGenerator`). `ZombieExpansion.id(path)` crée un `Identifier` du mod : l'utiliser plutôt que reconstruire les identifiants à la main.
+- **Mixins** : `zombie_expansion.mixins.json` référence encore `ExampleMixin` (reste du template). Le retirer des deux endroits dès qu'il n'est plus utile ; `defaultRequire: 1` fait planter le chargement si une injection ne trouve pas sa cible.
+- **Template** : généré avec le Fabric Template Mod Generator, option **Data generation** activée, **sans** « Split client and common sources ».
+- **Environnements** : tout le code est dans `src/main/java`. Le code client (renderers, modèles, couches de modèle) va dans le sous-package `client/`, n'est jamais appelé depuis le code commun, et ses classes sont annotées `@Environment(EnvType.CLIENT)` si besoin. Un point d'entrée `client` (`ZombieExpansionClient`) sera ajouté à `fabric.mod.json` en même temps que la classe, au premier renderer.
+
+### Data generation
+
+- Point d'entrée : `ZombieExpansionDataGenerator` (`fabric-datagen`), qui enregistre les providers dans `onInitializeDataGenerator`.
+- Commande : `./gradlew runDatagen`. Les fichiers sont générés dans `src/main/generated/` : **ne jamais les modifier à la main**, modifier le provider puis relancer la datagen.
+- Tout ce qui peut être généré passe par un provider plutôt que par du JSON écrit à la main :
+    - traductions : `FabricLanguageProvider` (un pour `en_us`, un pour `fr_fr`)
+    - modèles d'items (œufs d'apparition, objets) : `FabricModelProvider`
+    - loot tables des zombies : `SimpleFabricLootTableProvider` avec `LootContextTypes.ENTITY`
+    - tags d'entités (régions, factions) : `FabricTagProvider.EntityTypeTagProvider`
+    - recettes : `FabricRecipeProvider`
+- Restent écrits à la main dans `src/main/resources` : textures, sons (`sounds.json`), `fabric.mod.json`, `zombie_expansion.mixins.json`. Les factions JSON pourront être générées plus tard par un `DataProvider` personnalisé.
+- Après une modification de provider : relancer `runDatagen` **avant** `runClient`.
 
 ### Structure prévue
 
 ```
 src/main/java/net/melvunx/zombieexpansion/
   ZombieExpansion.java        # ModInitializer : enregistrements
+  ZombieExpansionDataGenerator.java  # point d'entrée de la datagen
+  datagen/                    # providers (langues, modèles, loot, tags, recettes)
   entity/                     # classes des zombies et projectiles
   entity/ai/                  # goals personnalisés
   faction/                    # système de factions (chargé depuis les données)
   event/                      # hordes, raids de factions (PersistentState)
   registry/                   # ModEntities, ModItems, ModSounds...
   world/                      # spawn par biome (BiomeModifications)
-src/client/java/net/melvunx/zombieexpansion/
-  ZombieExpansionClient.java  # ClientModInitializer : renderers, modèles
-  render/                     # EntityRenderer / EntityModel
-src/main/resources/
+  client/                     # code client uniquement
+    ZombieExpansionClient.java  # ClientModInitializer : renderers, modèles
+    render/                   # EntityRenderer / EntityModel
+src/main/resources/           # écrit à la main
   fabric.mod.json
-  assets/zombie_expansion/    # textures, lang (fr_fr, en_us), sons
-  data/zombie_expansion/      # tags, loot tables, factions JSON
+  zombie_expansion.mixins.json
+  assets/zombie_expansion/    # textures, icon.png, sons
+src/main/generated/           # produit par runDatagen, ne pas éditer
+  assets/zombie_expansion/    # lang (en_us, fr_fr), modèles d'items
+  data/zombie_expansion/      # tags, loot tables, recettes
 ```
 
 ## Conventions
 
 - Un zombie = une classe d'entité + un renderer + un modèle + une texture + un œuf d'apparition + une loot table + une règle de spawn.
-- Toujours fournir les traductions `en_us.json` **et** `fr_fr.json`.
+- Toujours fournir les traductions anglaise **et** française, via les deux `FabricLanguageProvider`.
+- Chaque nouvel ajout se termine par la mise à jour des providers concernés et un `runDatagen`.
 - Respecter la gamerule `mobGriefing` pour tout mob qui casse ou modifie des blocs.
 - Données configurables (factions, relations) en **JSON datapack** plutôt qu'en dur dans le code, pour faciliter les addons futurs.
 - États visuels synchronisés client/serveur via `DataTracker` ; données persistantes via NBT (`writeCustomDataToNbt` / `readCustomDataFromNbt`).
