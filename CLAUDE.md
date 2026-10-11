@@ -58,6 +58,7 @@ Toutes les commandes passent par le wrapper Gradle (`./gradlew`, ou `gradlew.bat
     - loot tables des zombies : `SimpleFabricLootTableProvider` avec `LootContextTypes.ENTITY`
     - tags d'entités (régions, factions) : `FabricTagProvider.EntityTypeTagProvider`
     - recettes : `FabricRecipeProvider`
+- Référencer un tag **vanilla** depuis un `FabricTagProvider` demande `forceAddTag` (pas `addTag`), sinon la datagen échoue avec « missing following references ».
 - Restent écrits à la main dans `src/main/resources` : textures, sons (`sounds.json`), `fabric.mod.json`, `zombie_expansion.mixins.json`. Les factions JSON pourront être générées plus tard par un `DataProvider` personnalisé.
 - Après une modification de provider : relancer `runDatagen` **avant** `runClient`.
 
@@ -143,7 +144,8 @@ C'est la **faction pilote** : elle sert à tester le système de factions sur un
 Règles de faction :
 - **Faiblesse au feu** : dégâts de feu ×2, boules de feu (ghast, blaze, charge de feu) ×3, non cumulés. Centralisé dans `faction/FrostVulnerability.amplify()` ; chaque membre l'appelle depuis son `damage()`.
 - **Insensibles au gel** : tag vanilla `freeze_immune_entity_types` (généré par `ModEntityTypeTagProvider`), sinon un zombie transformé en neige poudreuse y subirait aussitôt du gel.
-- **Ralentis dans les biomes chauds** (désert, badlands, savane) : pas encore implémenté.
+- **Ralentis dans les biomes chauds** : -30 % de vitesse (`FrostVulnerability.updateHeatSlowdown`, modificateur temporaire). « Chaud » = tag `zombie_expansion:hot_biomes` (désert, `#is_badlands`, `#is_savanna`, `#is_nether`), pas un seuil de température.
+- **Retour en zombie** : un zombie gelé resté **140 ticks** en biome chaud puis **300 ticks** de conversion visible (tremblement via `isShaking`, flag synchronisé par `DataTracker`) redevient un zombie vanilla. Timings calqués sur `SkeletonEntity` (squelette → Stray), annulé dès qu'il quitte le biome chaud, persisté en NBT (`ZombieConversionTime`). La conversion inverse (zombie → gelé en neige poudreuse) reste, elle, à 100 ticks.
 - **Transformation** : un zombie vanilla (adulte ou bébé) resté 100 ticks dans la neige poudreuse devient un zombie gelé (même flag bébé, équipement et nom conservés). Seul `EntityType.ZOMBIE` est concerné (pas husk, noyé).
 - **Bébé** : même mécanique que le zombie vanilla (`isBaby()`, 5 % au spawn). Le renderer réduit le modèle à 50 % (`scaleModelForRender`) ; GeckoLib ne le fait pas seul.
 
