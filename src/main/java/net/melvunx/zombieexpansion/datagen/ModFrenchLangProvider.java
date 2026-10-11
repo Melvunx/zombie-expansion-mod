@@ -20,6 +20,7 @@ public class ModFrenchLangProvider extends FabricLanguageProvider {
 		builder.add(ModItems.FROZEN_ZOMBIE_SPAWN_EGG, "Œuf d'apparition de zombie gelé");
 
 		builder.add("command.zombie_expansion.biome.title", "Biome : %s (%s), température %s");
+		builder.add("command.zombie_expansion.biome.heat.hot", "Biome chaud : les zombies de la faction Givre sont ralentis de %s %% et redeviennent des zombies après %s s");
 		builder.add("command.zombie_expansion.biome.region.frost", "Région : faction Givre, les zombies vanilla sont remplacés en surface");
 		builder.add("command.zombie_expansion.biome.region.mixed", "Région : mixte, %s %% de zombies gelés / %s %% de zombies vanilla");
 		builder.add("command.zombie_expansion.biome.region.none", "Région : hors faction Givre (spawns vanilla)");

@@ -20,6 +20,7 @@ public class ModEnglishLangProvider extends FabricLanguageProvider {
 		builder.add(ModItems.FROZEN_ZOMBIE_SPAWN_EGG, "Frozen Zombie Spawn Egg");
 
 		builder.add("command.zombie_expansion.biome.title", "Biome: %s (%s), temperature %s");
+		builder.add("command.zombie_expansion.biome.heat.hot", "Hot biome: Frost faction zombies are slowed by %s%% and turn back into zombies after %s s");
 		builder.add("command.zombie_expansion.biome.region.frost", "Region: Frost faction, vanilla zombies are replaced on the surface");
 		builder.add("command.zombie_expansion.biome.region.mixed", "Region: mixed, %s%% frozen zombies / %s%% vanilla zombies");
 		builder.add("command.zombie_expansion.biome.region.none", "Region: not part of the Frost faction (vanilla spawns)");

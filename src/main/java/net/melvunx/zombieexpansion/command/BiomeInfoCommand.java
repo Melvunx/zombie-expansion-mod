@@ -4,6 +4,8 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 
 import net.melvunx.zombieexpansion.ZombieExpansion;
+import net.melvunx.zombieexpansion.entity.FrozenZombieEntity;
+import net.melvunx.zombieexpansion.faction.FrostVulnerability;
 import net.melvunx.zombieexpansion.registry.ModBiomeTags;
 import net.melvunx.zombieexpansion.world.FrostSpawns;
 import net.minecraft.entity.EntityType;
@@ -57,6 +59,12 @@ public final class BiomeInfoCommand {
 				Math.round(FrostSpawns.MIXED_FROST_SHARE * 100), Math.round((1 - FrostSpawns.MIXED_FROST_SHARE) * 100)));
 		} else {
 			reply(source, Text.translatable("command.zombie_expansion.biome.region.none"));
+		}
+
+		if (FrostVulnerability.isInHotBiome(world, pos)) {
+			reply(source, Text.translatable("command.zombie_expansion.biome.heat.hot",
+				Math.round(-FrostVulnerability.HEAT_SLOWDOWN * 100),
+				(FrozenZombieEntity.HOT_EXPOSURE_TICKS + FrozenZombieEntity.REVERSION_TICKS) / 20));
 		}
 
 		reply(source, Text.translatable(world.isSkyVisible(pos)
