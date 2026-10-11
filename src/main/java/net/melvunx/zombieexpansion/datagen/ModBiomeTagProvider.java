@@ -7,6 +7,7 @@ import net.fabricmc.fabric.api.datagen.v1.provider.FabricTagProvider;
 import net.melvunx.zombieexpansion.registry.ModBiomeTags;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.RegistryWrapper;
+import net.minecraft.registry.tag.BiomeTags;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.biome.BiomeKeys;
 
@@ -36,6 +37,14 @@ public class ModBiomeTagProvider extends FabricTagProvider<Biome> {
 			.add(BiomeKeys.FROZEN_OCEAN)
 			.add(BiomeKeys.DEEP_FROZEN_OCEAN)
 			.add(BiomeKeys.COLD_OCEAN);
+
+		// Tags vanilla réutilisés (forceAddTag : la datagen ne connaît pas les tags vanilla et refuserait addTag).
+		// Ils couvrent aussi les variantes (eroded/wooded badlands, savane venteuse).
+		getOrCreateTagBuilder(ModBiomeTags.HOT_BIOMES)
+			.add(BiomeKeys.DESERT)
+			.forceAddTag(BiomeTags.IS_BADLANDS)
+			.forceAddTag(BiomeTags.IS_SAVANNA)
+			.forceAddTag(BiomeTags.IS_NETHER);
 
 		getOrCreateTagBuilder(ModBiomeTags.FROST_FACTION_MIXED_SPAWNS)
 			.add(BiomeKeys.WINDSWEPT_FOREST);

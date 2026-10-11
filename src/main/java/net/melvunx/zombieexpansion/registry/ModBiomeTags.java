@@ -17,6 +17,9 @@ public final class ModBiomeTags {
 	/** Biomes mixtes : zombies vanilla et gelés cohabitent (voir FrostSpawns.MIXED_FROST_SHARE). */
 	public static final TagKey<Biome> FROST_FACTION_MIXED_SPAWNS = of("frost_faction_mixed_spawns");
 
+	/** Biomes chauds : les membres de la faction Givre y sont ralentis, puis y perdent leur givre. */
+	public static final TagKey<Biome> HOT_BIOMES = of("hot_biomes");
+
 	private ModBiomeTags() {
 	}
 
