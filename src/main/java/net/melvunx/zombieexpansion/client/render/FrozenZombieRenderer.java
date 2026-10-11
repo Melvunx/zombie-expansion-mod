@@ -36,4 +36,10 @@ public class FrozenZombieRenderer extends GeoEntityRenderer<FrozenZombieEntity> 
 		super.scaleModelForRender(widthScale * babyScale, heightScale * babyScale, poseStack, animatable, model,
 			isReRender, partialTick, packedLight, packedOverlay);
 	}
+
+	/** Fait trembler le modèle pendant la conversion en zombie (comme le Stray qui se transforme en squelette). */
+	@Override
+	public boolean isShaking(FrozenZombieEntity animatable) {
+		return animatable.isConvertingToZombie() || super.isShaking(animatable);
+	}
 }
