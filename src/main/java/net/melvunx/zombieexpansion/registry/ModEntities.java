@@ -2,6 +2,7 @@ package net.melvunx.zombieexpansion.registry;
 
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.melvunx.zombieexpansion.ZombieExpansion;
+import net.melvunx.zombieexpansion.entity.BlindedZombieEntity;
 import net.melvunx.zombieexpansion.entity.FrozenZombieEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -27,6 +28,13 @@ public final class ModEntities {
 			.maxTrackingRange(8)
 	);
 
+	public static final EntityType<BlindedZombieEntity> BLINDED_ZOMBIE = register(
+		"blinded_zombie",
+		EntityType.Builder.create(BlindedZombieEntity::new, SpawnGroup.MONSTER)
+			.dimensions(0.6f, 1.95f)
+			.maxTrackingRange(8)
+	);
+
 	private ModEntities() {
 	}
 
@@ -39,8 +47,12 @@ public final class ModEntities {
 		// Sans attributs par défaut, le jeu plante au spawn de toute entité vivante.
 		FabricDefaultAttributeRegistry.register(FROZEN_ZOMBIE, ZombieEntity.createZombieAttributes());
 
+		FabricDefaultAttributeRegistry.register(BLINDED_ZOMBIE, BlindedZombieEntity.createAttributes());
+
 		// Où et quand le jeu a le droit de le faire apparaître (même emplacement que le zombie vanilla).
 		SpawnRestriction.register(FROZEN_ZOMBIE, SpawnLocationTypes.ON_GROUND,
 			Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, FrozenZombieEntity::canSpawn);
+		SpawnRestriction.register(BLINDED_ZOMBIE, SpawnLocationTypes.ON_GROUND,
+			Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, BlindedZombieEntity::canSpawn);
 	}
 }

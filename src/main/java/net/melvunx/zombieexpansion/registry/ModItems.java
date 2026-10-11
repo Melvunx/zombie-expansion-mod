@@ -16,6 +16,11 @@ public final class ModItems {
 		new SpawnEggItem(ModEntities.FROZEN_ZOMBIE, 0x9FD3E6, 0xE8F6FB, new Item.Settings())
 	);
 
+	public static final SpawnEggItem BLINDED_ZOMBIE_SPAWN_EGG = register(
+		"blinded_zombie_spawn_egg",
+		new SpawnEggItem(ModEntities.BLINDED_ZOMBIE, 0x0E2A33, 0x1CBFC4, new Item.Settings())
+	);
+
 	private ModItems() {
 	}
 
@@ -26,6 +31,9 @@ public final class ModItems {
 	public static void register() {
 		// Sans ça, l'œuf existe mais n'apparaît dans aucun onglet du mode créatif.
 		ItemGroupEvents.modifyEntriesEvent(ItemGroups.SPAWN_EGGS)
-			.register(entries -> entries.add(FROZEN_ZOMBIE_SPAWN_EGG));
+			.register(entries -> {
+				entries.add(FROZEN_ZOMBIE_SPAWN_EGG);
+				entries.add(BLINDED_ZOMBIE_SPAWN_EGG);
+			});
 	}
 }
