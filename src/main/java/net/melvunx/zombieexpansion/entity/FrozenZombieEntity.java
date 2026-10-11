@@ -41,13 +41,26 @@ public class FrozenZombieEntity extends ZombieEntity implements GeoEntity {
 	/** Ticks de gel ajoutés au-dessus du seuil de dégâts (140 ticks = 7 s de neige poudreuse). */
 	private static final int FREEZE_BONUS_TICKS = 60;
 
-	// Noms définis dans frozen_zombie.animation.json.
+	/**
+	 * Noms définis dans frozen_zombie.animation.json (adulte) et baby_frozen_zombie.animation.json (bébé).
+	 * Le bébé a ses propres durées et amplitudes, adaptées à sa petite taille : d'où deux jeux d'animations.
+	 */
 	private static final RawAnimation IDLE = RawAnimation.begin().thenLoop("animation.frozen_zombie.idle");
-	private static final RawAnimation WALK = RawAnimation.begin().thenLoop("animation.frozen_zombie.walk");
 	private static final RawAnimation HITTING = RawAnimation.begin().thenPlay("animation.frozen_zombie.hitting");
+	// Départ de marche : la transition (bras) se joue une fois, puis la marche boucle.
+	private static final RawAnimation WALK_FROM_IDLE = RawAnimation.begin()
+		.thenPlay("animation.frozen_zombie.transition")
+		.thenLoop("animation.frozen_zombie.walk");
+
+	private static final RawAnimation BABY_IDLE = RawAnimation.begin().thenLoop("animation.baby_frozen_zombie.idle");
+	private static final RawAnimation BABY_HITTING = RawAnimation.begin().thenPlay("animation.baby_frozen_zombie.hitting");
+	private static final RawAnimation BABY_WALK_FROM_IDLE = RawAnimation.begin()
+		.thenPlay("animation.baby_frozen_zombie.transition")
+		.thenLoop("animation.baby_frozen_zombie.walk");
 
 	private static final String ATTACK_CONTROLLER = "attack";
 	private static final String HITTING_TRIGGER = "hitting";
+	private static final String BABY_HITTING_TRIGGER = "baby_hitting";
 
 	/**
 	 * Durées de retour en zombie, calquées sur SkeletonEntity (squelette → Stray) :
@@ -157,11 +170,17 @@ public class FrozenZombieEntity extends ZombieEntity implements GeoEntity {
 
 		// Ne joue rien tout seul : ne démarre que sur triggerAnim("attack", "hitting").
 		controllers.add(new AnimationController<>(this, ATTACK_CONTROLLER, 0, state -> PlayState.STOP)
-			.triggerableAnim(HITTING_TRIGGER, HITTING));
+			.triggerableAnim(HITTING_TRIGGER, HITTING)
+			.triggerableAnim(BABY_HITTING_TRIGGER, BABY_HITTING));
 	}
 
 	private PlayState movementPredicate(AnimationState<FrozenZombieEntity> state) {
-		return state.setAndContinue(state.isMoving() ? WALK : IDLE);
+		// setAndContinue ne relance une animation que si le RawAnimation change : WALK_FROM_IDLE
+		// (transition puis marche) ne se joue donc qu'au démarrage du déplacement, pas à chaque tick.
+		if (isBaby()) {
+			return state.setAndContinue(state.isMoving() ? BABY_WALK_FROM_IDLE : BABY_IDLE);
+		}
+		return state.setAndContinue(state.isMoving() ? WALK_FROM_IDLE : IDLE);
 	}
 
 	@Override
@@ -179,7 +198,7 @@ public class FrozenZombieEntity extends ZombieEntity implements GeoEntity {
 
 		if (hit) {
 			// Serveur -> clients : GeckoLib envoie un paquet pour jouer l'animation partout.
-			triggerAnim(ATTACK_CONTROLLER, HITTING_TRIGGER);
+			triggerAnim(ATTACK_CONTROLLER, isBaby() ? BABY_HITTING_TRIGGER : HITTING_TRIGGER);
 		}
 
 		// canFreeze() respecte le tag freeze_immune_entity_types et l'armure en cuir.
