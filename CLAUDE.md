@@ -110,6 +110,28 @@ src/main/generated/           # produit par runDatagen, ne pas éditer
 | Factions | — | Alliances et guerres entre factions | Relations alliés/ennemis en JSON datapack, extensible aux autres mobs | ⭐⭐⭐ |
 | Raids de factions | Villages | Raids zombies par vagues | Système maison (pas le `Raid` vanilla) : `PersistentState`, vagues, `ServerBossBar` | ⭐⭐⭐⭐⭐ |
 
+
+### Faction du froid : « Givre »
+
+Biomes : plaines enneigées, Ice Spikes, taïgas enneigées, bosquets, pics gelés, océans gelés.
+C'est la **faction pilote** : elle sert à tester le système de factions sur un seul groupe de biomes avant de l'étendre aux autres régions.
+
+| Zombie | Rôle | Idée clé | Piste technique | Difficulté |
+|---|---|---|---|---|
+| Zombie gelé | Base | Coups qui gèlent | `frozenTicks`, attributs | ⭐ |
+| Lanceur de glace | Distance | Boules de neige tassées avec dégâts et gel | Projectile dérivé de la boule de neige + `ProjectileAttackGoal` | ⭐⭐ |
+| Souffleur de blizzard | Distance / contrôle | Cône de vent qui repousse et réduit la visibilité | Zone d'effet devant lui + knockback + particules | ⭐⭐⭐ |
+| Zombie stalactite | Embuscade (grottes glacées) | Accroché au plafond, fait tomber des pics de glace | Entité suspendue + projectile tombant, comme la stalactite pointue | ⭐⭐⭐ |
+| Harponneur des glaces | Distance (océans gelés) | Harpon qui tire le joueur vers lui | Projectile relié + traction, comme la canne à pêche | ⭐⭐⭐⭐ |
+| Cavalier d'ours polaire | Monture | Ours polaire zombie qui charge, cavalier qui frappe ou lance | Système de jockey vanilla ; le cavalier continue à pied si l'ours meurt | ⭐⭐⭐ |
+| Cavalier de chèvre | Monture (montagnes) | Bonds sur les pentes, charges qui projettent dans le vide | Jockey + IA de saut de la chèvre | ⭐⭐⭐ |
+| Meneur de traîneau | Monture | Traîneau tiré par des loups zombies | Entité traîneau + coordination de plusieurs mobs | ⭐⭐⭐⭐⭐ |
+| Chaman du givre | **Chef (pas un boss)** | Soutien : armure de givre (absorption), murs de neige, soins | Pas de barre de boss, vie un peu plus élevée ; goal de fuite face au joueur ; sorts renforcés selon le nombre d'alliés (logique commune avec le zombie général) | ⭐⭐⭐⭐ |
+| Zombie enseveli | Piège | Caché sous la neige poudreuse, surgit au passage | Entité invisible/immobile dans la neige poudreuse, détection de proximité | ⭐⭐ |
+| Zombie dans la glace | Piège / ambiance (Ice Spikes) | Prisonnier d'un bloc de glace, se libère si la glace casse ou près d'une source de chaleur | Structure ou feature de spawn + détection de blocs de chaleur | ⭐⭐⭐ |
+
+Règle de faction : tous les zombies Givre prennent **plus de dégâts du feu** et sont **ralentis dans les biomes chauds** (désert, badlands, savane).
+
 ### Idées supplémentaires (non validées)
 
 - Zombie mineur (grottes) : creuse vers le joueur, lâche du minerai.
@@ -127,7 +149,7 @@ src/main/generated/           # produit par runDatagen, ne pas éditer
 2. Premier zombie simple (zombie gelé) : entité, attributs, rendu, œuf, spawn par biome
 3. Zombie aveugle (IA, goals, GameEvents)
 4. Zombie lanceur (projectiles, DataTracker)
-5. Tags régionaux, hostilité inter-zombies, puis factions en JSON
+5. Tags régionaux, hostilité inter-zombies, puis factions en JSON (tester d'abord avec la faction Givre)
 6. Zombie général et hordes
 7. Zombie marchand pacifiste
 8. Raids de factions
