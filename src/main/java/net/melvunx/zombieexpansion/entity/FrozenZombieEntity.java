@@ -2,8 +2,13 @@ package net.melvunx.zombieexpansion.entity;
 
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
+import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.mob.ZombieEntity;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.random.Random;
+import net.minecraft.world.ServerWorldAccess;
 import net.minecraft.world.World;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
@@ -41,6 +46,16 @@ public class FrozenZombieEntity extends ZombieEntity implements GeoEntity {
 
 	public FrozenZombieEntity(EntityType<? extends ZombieEntity> entityType, World world) {
 		super(entityType, world);
+	}
+
+	/**
+	 * Règle de spawn : celle du zombie vanilla (sombre, sur le sol) + ciel visible.
+	 * Sous terre, c'est le zombie vanilla qui apparaît (voir SpawnRestrictionMixin).
+	 * Les œufs, spawners et commandes ne passent pas par ici ou sont exemptés.
+	 */
+	public static boolean canSpawn(EntityType<FrozenZombieEntity> type, ServerWorldAccess world, SpawnReason reason, BlockPos pos, Random random) {
+		boolean natural = reason == SpawnReason.NATURAL || reason == SpawnReason.CHUNK_GENERATION;
+		return HostileEntity.canSpawnInDark(type, world, reason, pos, random) && (!natural || world.isSkyVisible(pos));
 	}
 
 	/**

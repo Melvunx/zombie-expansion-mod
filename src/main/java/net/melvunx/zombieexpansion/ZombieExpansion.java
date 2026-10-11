@@ -4,6 +4,7 @@ import net.fabricmc.api.ModInitializer;
 
 import net.melvunx.zombieexpansion.registry.ModEntities;
 import net.melvunx.zombieexpansion.registry.ModItems;
+import net.melvunx.zombieexpansion.world.FrostSpawns;
 import net.minecraft.util.Identifier;
 
 import org.slf4j.Logger;
@@ -26,6 +27,7 @@ public class ZombieExpansion implements ModInitializer {
 		// Ordre important : les entités avant les objets (l'œuf référence le type d'entité).
 		ModEntities.register();
 		ModItems.register();
+		FrostSpawns.register();
 
 		LOGGER.info("Zombie Expansion loaded");
 	}

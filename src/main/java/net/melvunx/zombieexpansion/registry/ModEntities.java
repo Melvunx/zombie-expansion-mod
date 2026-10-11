@@ -9,6 +9,9 @@ import net.minecraft.entity.SpawnGroup;
 import net.minecraft.entity.mob.ZombieEntity;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
+import net.minecraft.entity.SpawnLocationTypes;
+import net.minecraft.entity.SpawnRestriction;
+import net.minecraft.world.Heightmap;
 
 /**
  * Registre des types d'entités du mod.
@@ -35,5 +38,9 @@ public final class ModEntities {
 	public static void register() {
 		// Sans attributs par défaut, le jeu plante au spawn de toute entité vivante.
 		FabricDefaultAttributeRegistry.register(FROZEN_ZOMBIE, ZombieEntity.createZombieAttributes());
+
+		// Où et quand le jeu a le droit de le faire apparaître (même emplacement que le zombie vanilla).
+		SpawnRestriction.register(FROZEN_ZOMBIE, SpawnLocationTypes.ON_GROUND,
+			Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, FrozenZombieEntity::canSpawn);
 	}
 }
