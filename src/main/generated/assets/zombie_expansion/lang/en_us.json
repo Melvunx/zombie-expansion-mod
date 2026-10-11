@@ -1,4 +1,5 @@
 {
+  "command.zombie_expansion.biome.heat.hot": "Hot biome: Frost faction zombies are slowed by %s%% and turn back into zombies after %s s",
   "command.zombie_expansion.biome.region.frost": "Region: Frost faction, vanilla zombies are replaced on the surface",
   "command.zombie_expansion.biome.region.mixed": "Region: mixed, %s%% frozen zombies / %s%% vanilla zombies",
   "command.zombie_expansion.biome.region.none": "Region: not part of the Frost faction (vanilla spawns)",
