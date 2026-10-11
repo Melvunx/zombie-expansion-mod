@@ -44,7 +44,7 @@ Toutes les commandes passent par le wrapper Gradle (`./gradlew`, ou `gradlew.bat
 - **Package racine** : `net.melvunx.zombieexpansion`
 - **Auteur** : melvunx · **Licence** : MIT
 - **Entrées dans `fabric.mod.json`** : `main` (`ZombieExpansion`) et `fabric-datagen` (`ZombieExpansionDataGenerator`). `ZombieExpansion.id(path)` crée un `Identifier` du mod : l'utiliser plutôt que reconstruire les identifiants à la main.
-- **Mixins** : `zombie_expansion.mixins.json` ; `defaultRequire: 1` fait planter le chargement si une injection ne trouve pas sa cible. Actuel : `SpawnRestrictionMixin` (interdit le zombie vanilla en surface dans les biomes Givre).
+- **Mixins** : `zombie_expansion.mixins.json` ; `defaultRequire: 1` fait planter le chargement si une injection ne trouve pas sa cible. Actuels : `SpawnRestrictionMixin` (interdit le zombie vanilla en surface dans les biomes Givre) et `ZombieEntityMixin` (zombie en neige poudreuse → zombie gelé). **Piège** : un `@Shadow` ne retrouve pas un champ hérité (ex. `Entity#inPowderSnow`) depuis un mixin sur une sous-classe ; l'erreur n'apparaît qu'au runtime (la datagen la révèle, pas `compileJava`).
 - **Template** : généré avec le Fabric Template Mod Generator, option **Data generation** activée, **sans** « Split client and common sources ».
 - **Environnements** : tout le code est dans `src/main/java`. Le code client (renderers, modèles, couches de modèle) va dans le sous-package `client/`, n'est jamais appelé depuis le code commun, et ses classes sont annotées `@Environment(EnvType.CLIENT)` si besoin. Un point d'entrée `client` (`ZombieExpansionClient`) sera ajouté à `fabric.mod.json` en même temps que la classe, au premier renderer.
 
@@ -140,7 +140,12 @@ C'est la **faction pilote** : elle sert à tester le système de factions sur un
 | Zombie enseveli | Piège | Caché sous la neige poudreuse, surgit au passage | Entité invisible/immobile dans la neige poudreuse, détection de proximité | ⭐⭐ |
 | Zombie dans la glace | Piège / ambiance (Ice Spikes) | Prisonnier d'un bloc de glace, se libère si la glace casse ou près d'une source de chaleur | Structure ou feature de spawn + détection de blocs de chaleur | ⭐⭐⭐ |
 
-Règle de faction : tous les zombies Givre prennent **plus de dégâts du feu** et sont **ralentis dans les biomes chauds** (désert, badlands, savane).
+Règles de faction :
+- **Faiblesse au feu** : dégâts de feu ×2, boules de feu (ghast, blaze, charge de feu) ×3, non cumulés. Centralisé dans `faction/FrostVulnerability.amplify()` ; chaque membre l'appelle depuis son `damage()`.
+- **Insensibles au gel** : tag vanilla `freeze_immune_entity_types` (généré par `ModEntityTypeTagProvider`), sinon un zombie transformé en neige poudreuse y subirait aussitôt du gel.
+- **Ralentis dans les biomes chauds** (désert, badlands, savane) : pas encore implémenté.
+- **Transformation** : un zombie vanilla (adulte ou bébé) resté 100 ticks dans la neige poudreuse devient un zombie gelé (même flag bébé, équipement et nom conservés). Seul `EntityType.ZOMBIE` est concerné (pas husk, noyé).
+- **Bébé** : même mécanique que le zombie vanilla (`isBaby()`, 5 % au spawn). Le renderer réduit le modèle à 50 % (`scaleModelForRender`) ; GeckoLib ne le fait pas seul.
 
 ### Idées supplémentaires (non validées)
 
