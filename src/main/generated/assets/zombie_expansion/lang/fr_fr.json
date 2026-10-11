@@ -1,4 +1,12 @@
 {
+  "command.zombie_expansion.biome.region.frost": "Région : faction Givre, les zombies vanilla sont remplacés en surface",
+  "command.zombie_expansion.biome.region.mixed": "Région : mixte, %s %% de zombies gelés / %s %% de zombies vanilla",
+  "command.zombie_expansion.biome.region.none": "Région : hors faction Givre (spawns vanilla)",
+  "command.zombie_expansion.biome.sky.hidden": "Position : sous terre (ciel non visible), les zombies vanilla peuvent apparaître",
+  "command.zombie_expansion.biome.sky.visible": "Position : surface (ciel visible)",
+  "command.zombie_expansion.biome.spawn.entry": "Spawn actif : %s, poids %s, groupe %s-%s",
+  "command.zombie_expansion.biome.spawn.none": "Aucune entrée de zombie dans ce biome",
+  "command.zombie_expansion.biome.title": "Biome : %s (%s), température %s",
   "entity.zombie_expansion.frozen_zombie": "Zombie gelé",
   "item.zombie_expansion.frozen_zombie_spawn_egg": "Œuf d'apparition de zombie gelé"
 }

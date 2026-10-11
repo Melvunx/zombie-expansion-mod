@@ -1,4 +1,12 @@
 {
+  "command.zombie_expansion.biome.region.frost": "Region: Frost faction, vanilla zombies are replaced on the surface",
+  "command.zombie_expansion.biome.region.mixed": "Region: mixed, %s%% frozen zombies / %s%% vanilla zombies",
+  "command.zombie_expansion.biome.region.none": "Region: not part of the Frost faction (vanilla spawns)",
+  "command.zombie_expansion.biome.sky.hidden": "Position: underground (no sky visible), vanilla zombies can spawn",
+  "command.zombie_expansion.biome.sky.visible": "Position: surface (sky visible)",
+  "command.zombie_expansion.biome.spawn.entry": "Active spawn: %s, weight %s, group %s-%s",
+  "command.zombie_expansion.biome.spawn.none": "No zombie spawn entry in this biome",
+  "command.zombie_expansion.biome.title": "Biome: %s (%s), temperature %s",
   "entity.zombie_expansion.frozen_zombie": "Frozen Zombie",
   "item.zombie_expansion.frozen_zombie_spawn_egg": "Frozen Zombie Spawn Egg"
 }
