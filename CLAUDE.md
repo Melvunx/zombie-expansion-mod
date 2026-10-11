@@ -44,7 +44,7 @@ Toutes les commandes passent par le wrapper Gradle (`./gradlew`, ou `gradlew.bat
 - **Package racine** : `net.melvunx.zombieexpansion`
 - **Auteur** : melvunx · **Licence** : MIT
 - **Entrées dans `fabric.mod.json`** : `main` (`ZombieExpansion`) et `fabric-datagen` (`ZombieExpansionDataGenerator`). `ZombieExpansion.id(path)` crée un `Identifier` du mod : l'utiliser plutôt que reconstruire les identifiants à la main.
-- **Mixins** : `zombie_expansion.mixins.json` référence encore `ExampleMixin` (reste du template). Le retirer des deux endroits dès qu'il n'est plus utile ; `defaultRequire: 1` fait planter le chargement si une injection ne trouve pas sa cible.
+- **Mixins** : `zombie_expansion.mixins.json` ; `defaultRequire: 1` fait planter le chargement si une injection ne trouve pas sa cible. Actuel : `SpawnRestrictionMixin` (interdit le zombie vanilla en surface dans les biomes Givre).
 - **Template** : généré avec le Fabric Template Mod Generator, option **Data generation** activée, **sans** « Split client and common sources ».
 - **Environnements** : tout le code est dans `src/main/java`. Le code client (renderers, modèles, couches de modèle) va dans le sous-package `client/`, n'est jamais appelé depuis le code commun, et ses classes sont annotées `@Environment(EnvType.CLIENT)` si besoin. Un point d'entrée `client` (`ZombieExpansionClient`) sera ajouté à `fabric.mod.json` en même temps que la classe, au premier renderer.
 
@@ -73,7 +73,9 @@ src/main/java/net/melvunx/zombieexpansion/
   faction/                    # système de factions (chargé depuis les données)
   event/                      # hordes, raids de factions (PersistentState)
   registry/                   # ModEntities, ModItems, ModSounds...
-  world/                      # spawn par biome (BiomeModifications)
+  world/                      # spawn par biome (BiomeModifications) : FrostSpawns
+  command/                    # commandes (/zombie_expansion biome)
+  mixin/                      # SpawnRestrictionMixin
   client/                     # code client uniquement
     ZombieExpansionClient.java  # ClientModInitializer : renderers, modèles
     render/                   # EntityRenderer / EntityModel
@@ -113,7 +115,15 @@ src/main/generated/           # produit par runDatagen, ne pas éditer
 
 ### Faction du froid : « Givre »
 
-Biomes : plaines enneigées, Ice Spikes, taïgas enneigées, bosquets, pics gelés, océans gelés.
+**Biomes** : définis par le tag `zombie_expansion:frost_faction_spawns` (généré par `ModBiomeTagProvider`, donc modifiable par datapack). Snowy Plains, Ice Spikes, Snowy Taiga, Snowy Beach, Grove, Snowy Slopes, Jagged Peaks, Frozen Peaks, Windswept Hills, Windswept Gravelly Hills, Taiga, Old Growth Pine/Spruce Taiga, Frozen River, Frozen Ocean, Deep Frozen Ocean, Cold Ocean. **Windswept Forest** est mixte (tag `frost_faction_mixed_spawns`) : 70 % gelé / 30 % vanilla.
+
+**Règles de spawn** :
+- Le zombie gelé **remplace** le zombie vanilla dans ces biomes en copiant le poids et la taille de groupe d'origine du biome (95 presque partout, 100 en Old Growth Pine Taiga). Ne pas coder de poids en dur. Les variantes de la faction seront, elles, à poids bas.
+- Les zombies villageois, noyés et husks restent vanilla.
+- **Surface = gelé, sous terre = vanilla** : le gelé exige le ciel visible (`FrozenZombieEntity.canSpawn`), et `SpawnRestrictionMixin` refuse le zombie vanilla en surface dans le tag. Les biomes sont 3D : une grotte sous des Snowy Plains *est* Snowy Plains, c'est la visibilité du ciel qui distingue.
+- La température d'un biome n'est **pas** un critère de spawn : Stony Shore et Windswept Hills valent tous deux 0,2 alors qu'ils ne vont pas dans le même camp. Toujours passer par les tags.
+- `/zombie_expansion biome` affiche biome, température, région et poids actifs : l'utiliser pour vérifier un spawn.
+
 C'est la **faction pilote** : elle sert à tester le système de factions sur un seul groupe de biomes avant de l'étendre aux autres régions.
 
 | Zombie | Rôle | Idée clé | Piste technique | Difficulté |
