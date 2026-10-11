@@ -149,6 +149,52 @@ Règles de faction :
 - **Transformation** : un zombie vanilla (adulte ou bébé) resté 100 ticks dans la neige poudreuse devient un zombie gelé (même flag bébé, équipement et nom conservés). Seul `EntityType.ZOMBIE` est concerné (pas husk, noyé).
 - **Bébé** : même mécanique que le zombie vanilla (`isBaby()`, 5 % au spawn). Le renderer réduit le modèle à 50 % (`scaleModelForRender`) ; GeckoLib ne le fait pas seul.
 
+### Faction des profondeurs : « Abysses »
+
+Zone : **entre Y -8 et Y -64** (couche de deepslate), cœur de faction dans le **Deep Dark**. Thème : ténèbres, sculk, minerais des profondeurs, lien avec le Warden.
+Objectif de design : c'est la faction **la plus puissante**. L'exploration des profondeurs doit être nettement plus difficile qu'en vanilla, tout en restant juste (contre-mesures possibles : marcher accroupi, laine, armure d'améthyste).
+
+**Relations** : ennemie des futures factions **Lush Caves** et **Dripstone**, qui sont alliées entre elles. Combats attendus aux frontières des zones.
+
+| Zombie | Rôle | Capacités validées | Piste technique | Difficulté |
+|---|---|---|---|---|
+| Zombie aveugle | Base | Chasse au son, plus rapide qu'un zombie normal ; déclenche les sculk shriekers ; **10 % de chance** d'infliger un court effet **Darkness** à chaque coup | `GameEventListener`, ciblage sans ligne de vue ; `StatusEffects.DARKNESS` sur `tryAttack` | ⭐⭐ |
+| Lanceur d'améthyste | Distance | Zombie couvert d'améthyste, tire à l'**arbalète d'améthyste** avec des éclats d'améthyste | `CrossbowAttackGoal` / `CrossbowUser` + projectile `AmethystShardEntity` (partagé avec l'item joueur) | ⭐⭐⭐ |
+| Zombie incrusté | Variantes de minerai | Une entité, plusieurs variantes : **diamant** (très résistant), **redstone** (faisceau électrique), **lapis** (vole de l'XP à chaque coup), **or** (rapide, vole et fuit) | Variante stockée en `DataTracker` + NBT ; le renderer choisit la texture selon la variante | ⭐⭐⭐ |
+| ↳ variante redstone | Distance courte | **Faisceau de redstone** façon « Kamé Hamé Ha » : portée **~4 blocs**, dure **2 s**, **dégâts en continu** | Raycast chaque tick pendant 40 ticks, dégâts par tick aux entités touchées, particules de poussière de redstone ; temps de recharge à définir | ⭐⭐⭐ |
+| Mineur des profondeurs | Voleur | Variante des profondeurs du **mineur zombie** (faction vanilla), **plus rapide** ; vole les minerais de l'inventaire et fuit, les rend à sa mort | Goal de fuite + inventaire interne sauvegardé en NBT | ⭐⭐⭐ |
+| Éteigneur | Contrôle | Variante des profondeurs du **voleur de torche** (faction vanilla) : éteint les torches autour de lui | Recherche de blocs de lumière proches + suppression (respecter `mobGriefing`) | ⭐⭐ |
+| Prophète du Sculk | **Chef (pas un boss)** | Voir détail ci-dessous | Logique de chef commune (général, chaman) | ⭐⭐⭐⭐ |
+
+**Prophète du Sculk** : zombie couvert de sculk avec un catalyseur dans la poitrine. Pas de barre de boss, reste en retrait et fuit le joueur.
+- Donne aux **zombies aveugles** proches un effet personnalisé **Ouïe aiguisée** qui augmente la portée de leur écoute.
+- Augmente la **vie** et la **vitesse** de tous les zombies Abysses aux alentours.
+- Lance périodiquement (**pas en continu**) une salve de debuffs sur les joueurs et ennemis proches : **Faiblesse 10 s**, **Lenteur 10 s**, **Darkness 5 s**.
+- Répand du sculk quand un zombie meurt près de lui, comme un catalyseur.
+  **Spawn** : le Deep Dark n'a aucun spawn de monstres en vanilla. Ajouter les spawns avec `BiomeModifications.addSpawn` et une restriction personnalisée (`SpawnRestriction`) qui vérifie `pos.getY() <= -8`. Surveiller la fréquence pour ne pas rendre la zone invivable.
+
+**Loot** :
+- Zombies du Deep Dark : chair putréfiée + **fragments d'écho**.
+- Lanceur d'améthyste : chair putréfiée + **éclats d'améthyste** + faible chance de lâcher son **arbalète d'améthyste**.
+- Mineur des profondeurs : chair putréfiée + **1 % de chance pour chacun** des 5 localisateurs de minerai.
+  **À définir** : durée exacte du Darkness du zombie aveugle ; temps de recharge des salves du Prophète et du faisceau de redstone ; taux de drop des fragments d'écho et de l'arbalète ; si les tirs du lanceur d'améthyste appliquent Surbrillance et Provocation au joueur ; « pression des profondeurs » (bonus de stats selon le Y) à valider.
+
+### Faction du zombie vanilla (nom à définir)
+
+Faction des zombies « classiques » de la surface. Membres prévus :
+- Zombie vanilla
+- **Mineur zombie** classique (sa variante des profondeurs, plus rapide, est dans les Abysses)
+- **Voleur de torche** (sa variante des profondeurs est l'Éteigneur des Abysses)
+## Items prévus
+
+| Item | Obtention | Effet | Piste technique |
+|---|---|---|---|
+| **Arbalète d'améthyste** | Craft ; rare sur le lanceur d'améthyste | Munitions : **éclats d'améthyste**. La cible touchée reçoit **Surbrillance** (Glowing) et **Provocation** | Classe dérivée de `CrossbowItem` qui accepte les éclats d'améthyste comme munitions ; projectile `AmethystShardEntity` |
+| **Effet Provocation** (Taunt) | Via l'arbalète d'améthyste | Pendant **10 s**, les **mobs hostiles** proches attaquent la cible. Sert à détourner l'attention des mobs | `StatusEffect` personnalisé : toutes les X ticks, les `HostileEntity` dans un rayon (à définir) prennent l'entité affectée comme cible (`setTarget`) |
+| **Effet Ouïe aiguisée** | Donné par le Prophète du Sculk | Augmente la portée d'écoute des zombies aveugles | `StatusEffect` personnalisé lu par le `GameEventListener` du zombie aveugle |
+| **Localisateurs de minerai** ×5 : diamant, fer, émeraude, redstone, lapis | Mineur des profondeurs, **1 % chacun** | Localisent le minerai correspondant le plus proche | À l'utilisation, scan limité autour du joueur (rayon et recharge à définir pour les performances) avec les tags de minerais (`BlockTags.DIAMOND_ORES`, etc.), indication de direction par particules ou message |
+| **Armure d'améthyste** | Craft : améthyste, laine, fragments d'écho | **Réduit les bruits** du joueur (moins de vibrations détectées) | `ArmorMaterial` enregistré (registre en 1.21) ; réduction du bruit via un mixin sur l'émission des GameEvents du joueur, ou vérifiée par les listeners du mod. Pièce par pièce ou set complet : à définir |
+
 ### Idées supplémentaires (non validées)
 
 - Zombie mineur (grottes) : creuse vers le joueur, lâche du minerai.
@@ -168,8 +214,11 @@ Règles de faction :
 4. Zombie lanceur (projectiles, DataTracker)
 5. Tags régionaux, hostilité inter-zombies, puis factions en JSON (tester d'abord avec la faction Givre)
 6. Zombie général et hordes
-7. Zombie marchand pacifiste
-8. Raids de factions
+7. Faction Abysses et ses items (arbalète d'améthyste, effets Provocation et Ouïe aiguisée, localisateurs, armure d'améthyste)
+8. Zombie marchand pacifiste
+9. Raids de factions
+
+Idées gardées pour une faction future : le zombie **rampant** (circule dans les tunnels d'un bloc de haut).
 
 ## Après le mod principal
 
