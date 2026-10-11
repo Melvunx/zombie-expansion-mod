@@ -8,6 +8,8 @@
   "command.zombie_expansion.biome.spawn.entry": "Active spawn: %s, weight %s, group %s-%s",
   "command.zombie_expansion.biome.spawn.none": "No zombie spawn entry in this biome",
   "command.zombie_expansion.biome.title": "Biome: %s (%s), temperature %s",
+  "entity.zombie_expansion.blinded_zombie": "The Blinded",
   "entity.zombie_expansion.frozen_zombie": "Frozen Zombie",
+  "item.zombie_expansion.blinded_zombie_spawn_egg": "The Blinded Spawn Egg",
   "item.zombie_expansion.frozen_zombie_spawn_egg": "Frozen Zombie Spawn Egg"
 }
