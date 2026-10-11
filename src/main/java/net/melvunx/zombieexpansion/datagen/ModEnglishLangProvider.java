@@ -17,6 +17,8 @@ public class ModEnglishLangProvider extends FabricLanguageProvider {
 	@Override
 	public void generateTranslations(RegistryWrapper.WrapperLookup registryLookup, TranslationBuilder builder) {
 		builder.add(ModEntities.FROZEN_ZOMBIE, "Frozen Zombie");
+		builder.add(ModEntities.BLINDED_ZOMBIE, "The Blinded");
+		builder.add(ModItems.BLINDED_ZOMBIE_SPAWN_EGG, "The Blinded Spawn Egg");
 		builder.add(ModItems.FROZEN_ZOMBIE_SPAWN_EGG, "Frozen Zombie Spawn Egg");
 
 		builder.add("command.zombie_expansion.biome.title", "Biome: %s (%s), temperature %s");
