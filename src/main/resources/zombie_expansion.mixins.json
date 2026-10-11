@@ -3,7 +3,8 @@
 	"package": "net.melvunx.zombieexpansion.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
-		"SpawnRestrictionMixin"
+		"SpawnRestrictionMixin",
+		"ZombieEntityMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1
