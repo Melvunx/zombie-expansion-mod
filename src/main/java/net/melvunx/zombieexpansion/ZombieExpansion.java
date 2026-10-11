@@ -2,6 +2,7 @@ package net.melvunx.zombieexpansion;
 
 import net.fabricmc.api.ModInitializer;
 
+import net.melvunx.zombieexpansion.command.ModCommands;
 import net.melvunx.zombieexpansion.registry.ModEntities;
 import net.melvunx.zombieexpansion.registry.ModItems;
 import net.melvunx.zombieexpansion.world.FrostSpawns;
@@ -28,6 +29,7 @@ public class ZombieExpansion implements ModInitializer {
 		ModEntities.register();
 		ModItems.register();
 		FrostSpawns.register();
+		ModCommands.register();
 
 		LOGGER.info("Zombie Expansion loaded");
 	}

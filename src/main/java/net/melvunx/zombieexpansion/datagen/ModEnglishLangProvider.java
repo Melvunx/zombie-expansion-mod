@@ -18,5 +18,14 @@ public class ModEnglishLangProvider extends FabricLanguageProvider {
 	public void generateTranslations(RegistryWrapper.WrapperLookup registryLookup, TranslationBuilder builder) {
 		builder.add(ModEntities.FROZEN_ZOMBIE, "Frozen Zombie");
 		builder.add(ModItems.FROZEN_ZOMBIE_SPAWN_EGG, "Frozen Zombie Spawn Egg");
+
+		builder.add("command.zombie_expansion.biome.title", "Biome: %s (%s), temperature %s");
+		builder.add("command.zombie_expansion.biome.region.frost", "Region: Frost faction, vanilla zombies are replaced on the surface");
+		builder.add("command.zombie_expansion.biome.region.mixed", "Region: mixed, %s%% frozen zombies / %s%% vanilla zombies");
+		builder.add("command.zombie_expansion.biome.region.none", "Region: not part of the Frost faction (vanilla spawns)");
+		builder.add("command.zombie_expansion.biome.sky.visible", "Position: surface (sky visible)");
+		builder.add("command.zombie_expansion.biome.sky.hidden", "Position: underground (no sky visible), vanilla zombies can spawn");
+		builder.add("command.zombie_expansion.biome.spawn.entry", "Active spawn: %s, weight %s, group %s-%s");
+		builder.add("command.zombie_expansion.biome.spawn.none", "No zombie spawn entry in this biome");
 	}
 }
