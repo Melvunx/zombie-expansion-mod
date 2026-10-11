@@ -70,16 +70,17 @@ src/main/java/net/melvunx/zombieexpansion/
   ZombieExpansionDataGenerator.java  # point d'entrée de la datagen
   datagen/                    # providers (langues, modèles, loot, tags, recettes)
   entity/                     # classes des zombies et projectiles
-  entity/ai/                  # goals personnalisés
+  entity/ai/                  # goals personnalisés (InvestigateVibrationGoal)
   faction/                    # système de factions (chargé depuis les données)
   event/                      # hordes, raids de factions (PersistentState)
   registry/                   # ModEntities, ModItems, ModSounds...
-  world/                      # spawn par biome (BiomeModifications) : FrostSpawns
+  world/                      # spawn par biome (BiomeModifications) : FrostSpawns, AbyssSpawns
   command/                    # commandes (/zombie_expansion biome)
   mixin/                      # SpawnRestrictionMixin
   client/                     # code client uniquement
     ZombieExpansionClient.java  # ClientModInitializer : renderers, modèles
-    render/                   # EntityRenderer / EntityModel
+    render/                   # EntityRenderer
+    model/                    # GeoModel (FrozenZombieModel : choisit l'animation bébé)
 src/main/resources/           # écrit à la main
   fabric.mod.json
   zombie_expansion.mixins.json
@@ -104,7 +105,7 @@ src/main/generated/           # produit par runDatagen, ne pas éditer
 | Zombie / système | Biome / lieu | Idée clé | Piste technique | Difficulté |
 |---|---|---|---|---|
 | Zombie gelé | Biomes enneigés | Coups qui gèlent | `frozenTicks`, attributs | ⭐ |
-| Zombie aveugle | Cavernes, Deep Dark | Chasse au bruit, plus rapide | `GameEventListener` (vibrations comme le Warden), ciblage sans ligne de vue ; accroupi = indétectable | ⭐⭐ |
+| Zombie aveugle (*The Blinded*) | Deep Dark uniquement | Chasse au bruit, plus rapide | `GameEventListener` (vibrations comme le Warden), ciblage sans ligne de vue ; accroupi = indétectable | ⭐⭐ |
 | Zombie caméléon | Jungle | Se fond dans le décor | V1 : texture camouflée + immobilité ; V2 : renderer teinté `BiomeColors` / transparence | ⭐⭐⭐ |
 | Zombie lanceur | À définir | Lance ses membres | Entité projectile + `DataTracker` pour masquer le bras sur le modèle | ⭐⭐⭐ |
 | Zombie général | Toutes régions | Renforce la horde selon le nombre | Comptage périodique des alliés proches + modificateurs d'attributs ; goal « suivre le leader » ; sa mort fait perdre les bonus | ⭐⭐⭐ |
@@ -166,6 +167,14 @@ Objectif de design : c'est la faction **la plus puissante**. L'exploration des p
 | Éteigneur | Contrôle | Variante des profondeurs du **voleur de torche** (faction vanilla) : éteint les torches autour de lui | Recherche de blocs de lumière proches + suppression (respecter `mobGriefing`) | ⭐⭐ |
 | Prophète du Sculk | **Chef (pas un boss)** | Voir détail ci-dessous | Logique de chef commune (général, chaman) | ⭐⭐⭐⭐ |
 
+**Zombie aveugle** (implémenté, `BlindedZombieEntity`, id `blinded_zombie`, nom EN « The Blinded ») :
+- **Spawn** : Deep Dark uniquement (`AbyssSpawns`), Y ≤ -8, poids 10, groupes de 2 à 4. Aucun bébé (`setBaby` neutralisé).
+- **Stats** : 14 PV, vitesse ×1,15 (0,23 → 0,2645), portée d'écoute **12 blocs** (`getListeningRange()`, point d'accroche de l'effet Ouïe aiguisée).
+- **Ciblage** : aucun `ActiveTargetGoal`. Il écoute les mêmes événements que le Warden (tag `warden_can_listen`) via `Vibrations`. Un bruit de joueur/villageois/golem le cible 100 ticks ; un projectile qui atterrit ne désigne *pas* son lanceur et l'attire seulement vers l'impact (`InvestigateVibrationGoal`). Il ignore les autres zombies. Accroupi = pas de vibration de pas = indétectable.
+- **Mort discrète** : un coup d'un joueur accroupi supprime les événements `ENTITY_DAMAGE` / `ENTITY_DIE`, donc les autres aveugles n'entendent rien.
+- **Darkness** : 10 % par coup, 100 ticks (durée à valider).
+- **Rendu** : provisoire (zombie vanilla) en attendant le bbmodel.
+
 **Prophète du Sculk** : zombie couvert de sculk avec un catalyseur dans la poitrine. Pas de barre de boss, reste en retrait et fuit le joueur.
 - Donne aux **zombies aveugles** proches un effet personnalisé **Ouïe aiguisée** qui augmente la portée de leur écoute.
 - Augmente la **vie** et la **vitesse** de tous les zombies Abysses aux alentours.
@@ -177,14 +186,18 @@ Objectif de design : c'est la faction **la plus puissante**. L'exploration des p
 - Zombies du Deep Dark : chair putréfiée + **fragments d'écho**.
 - Lanceur d'améthyste : chair putréfiée + **éclats d'améthyste** + faible chance de lâcher son **arbalète d'améthyste**.
 - Mineur des profondeurs : chair putréfiée + **1 % de chance pour chacun** des 5 localisateurs de minerai.
+  **À trancher** : la ligne du zombie aveugle dit « déclenche les sculk shriekers », alors que l'intention exprimée en conversation était qu'ils ne les actionnent **pas**. Vanilla : un shrieker n'accepte que des vibrations d'un joueur (ou d'un projectile/objet lancé par un joueur), donc un zombie ne peut ni le déclencher ni invoquer de Warden. L'implémentation actuelle suit le vanilla (pas de shriek). Les faire shrieker demanderait un mixin sur `SculkShriekerBlockEntity`.
   **À définir** : durée exacte du Darkness du zombie aveugle ; temps de recharge des salves du Prophète et du faisceau de redstone ; taux de drop des fragments d'écho et de l'arbalète ; si les tirs du lanceur d'améthyste appliquent Surbrillance et Provocation au joueur ; « pression des profondeurs » (bonus de stats selon le Y) à valider.
 
 ### Faction du zombie vanilla (nom à définir)
 
 Faction des zombies « classiques » de la surface. Membres prévus :
 - Zombie vanilla
-- **Mineur zombie** classique (sa variante des profondeurs, plus rapide, est dans les Abysses)
-- **Voleur de torche** (sa variante des profondeurs est l'Éteigneur des Abysses)
+- **Mineur zombie** classique : creuse vers le joueur et lâche du minerai (sa variante des profondeurs, plus rapide, est dans les Abysses). Respecter `mobGriefing`.
+- **Voleur de torche** (alias zombie porte-torche) : éteint ou vole les torches (sa variante des profondeurs est l'Éteigneur des Abysses)
+- **Zombie de géode** : armure de cristaux qui renvoie des dégâts, à briser à la pioche
+- **Zombie infecteur** : transforme les animaux tués en variantes zombies
+
 ## Items prévus
 
 | Item | Obtention | Effet | Piste technique |
@@ -197,14 +210,11 @@ Faction des zombies « classiques » de la surface. Membres prévus :
 
 ### Idées supplémentaires (non validées)
 
-- Zombie mineur (grottes) : creuse vers le joueur, lâche du minerai.
-- Zombie de géode : armure de cristaux qui renvoie des dégâts, à briser à la pioche.
 - Zombie sporifère (Lush Caves, champignons) : nuage de spores à la mort (`AreaEffectCloud`).
 - Momie du désert : se reconstitue sauf si tuée par le feu.
 - Zombie de marécage : caché sous l'eau, agrippe et ralentit.
-- Zombie porte-torche : éteint ou vole les torches.
-- Zombie infecteur : transforme les animaux tués en variantes zombies.
 - Talisman de faction (vendu par le marchand) : rend une faction neutre envers le joueur.
+- Succès « Tueur de faction » : avoir éliminé un zombie de chaque faction. Piste : un tag d'entités par faction (`zombie_expansion:frost_faction`...) + un advancement généré par `FabricAdvancementProvider` avec un critère `player_killed_entity` par tag, tous requis.
 
 ## Feuille de route
 
