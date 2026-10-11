@@ -3,7 +3,9 @@ package net.melvunx.zombieexpansion.entity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnReason;
+import net.melvunx.zombieexpansion.faction.FrostVulnerability;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.mob.ZombieEntity;
 import net.minecraft.util.math.BlockPos;
@@ -101,6 +103,15 @@ public class FrozenZombieEntity extends ZombieEntity implements GeoEntity {
 			living.setFrozenTicks(Math.max(living.getFrozenTicks(), frozenTicks));
 		}
 		return hit;
+	}
+
+	/**
+	 * Faiblesse au feu de la faction Givre : on amplifie les dégâts *avant* de laisser
+	 * le vanilla appliquer armure, absorption et résistances.
+	 */
+	@Override
+	public boolean damage(DamageSource source, float amount) {
+		return super.damage(source, FrostVulnerability.amplify(source, amount));
 	}
 
 	/** Un zombie de glace ne brûle pas au soleil (contrairement au zombie vanilla). */
