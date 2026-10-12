@@ -1,6 +1,7 @@
 package net.melvunx.zombieexpansion.entity;
 
 import net.melvunx.zombieexpansion.entity.ai.InvestigateVibrationGoal;
+import net.melvunx.zombieexpansion.entity.ai.SearchGoal;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -12,18 +13,22 @@ import net.minecraft.entity.ai.goal.ZombieAttackGoal;
 import net.minecraft.entity.attribute.DefaultAttributeContainer;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.entity.data.DataTracker;
+import net.minecraft.entity.data.TrackedData;
+import net.minecraft.entity.data.TrackedDataHandlerRegistry;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.mob.ZombieEntity;
-import net.minecraft.entity.passive.MerchantEntity;
-import net.minecraft.entity.passive.IronGolemEntity;
+import net.minecraft.entity.ItemEntity;
+import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.predicate.entity.EntityPredicates;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.registry.tag.GameEventTags;
 import net.minecraft.registry.tag.TagKey;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.Box;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.world.ServerWorldAccess;
@@ -34,6 +39,14 @@ import net.minecraft.world.event.PositionSource;
 import net.minecraft.world.event.Vibrations;
 import net.minecraft.world.event.listener.EntityGameEventHandler;
 import org.jetbrains.annotations.Nullable;
+import software.bernie.geckolib.animatable.GeoEntity;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animation.AnimatableManager;
+import software.bernie.geckolib.animation.AnimationController;
+import software.bernie.geckolib.animation.AnimationState;
+import software.bernie.geckolib.animation.PlayState;
+import software.bernie.geckolib.animation.RawAnimation;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.function.BiConsumer;
 
@@ -47,9 +60,12 @@ import java.util.function.BiConsumer;
  *
  * Conséquences voulues :
  *  - un joueur accroupi n'émet pas de vibration de pas : il est indétectable ;
- *  - une boule de neige lancée au loin attire le zombie vers l'endroit où elle retombe.
+ *  - une boule de neige lancée au loin attire le zombie vers l'endroit où elle retombe ;
+ *  - il n'écoute que le joueur (ses pas, ses projectiles, ses objets lâchés), pas les autres mobs.
+ *
+ * Implémente aussi {@link GeoEntity} : modèle et animations GeckoLib (the_blinded.*).
  */
-public class BlindedZombieEntity extends ZombieEntity implements Vibrations {
+public class BlindedZombieEntity extends ZombieEntity implements Vibrations, GeoEntity {
 	/** Portée d'écoute en blocs. Passée par une méthode pour que l'effet « Ouïe aiguisée » puisse la modifier plus tard. */
 	public static final int BASE_LISTENING_RANGE = 12;
 
@@ -69,6 +85,37 @@ public class BlindedZombieEntity extends ZombieEntity implements Vibrations {
 	/** Altitude maximale du spawn naturel (zone des Abysses : Y -8 et en dessous). */
 	private static final int MAX_SPAWN_Y = -8;
 
+	/** Plafond de densité : pas de nouveau spawn naturel s'il y a déjà 5 aveugles à moins de 24 blocs. */
+	private static final int MAX_NEARBY = 5;
+	private static final int DENSITY_RADIUS = 24;
+
+	/** Durée d'une recherche à l'arrivée sur un bruit : 3 à 5 secondes. */
+	private static final int SEARCH_MIN_TICKS = 60;
+	private static final int SEARCH_MAX_TICKS = 100;
+
+	// États synchronisés pour l'animation : le client ne connaît ni la cible ni la position à vérifier.
+	private static final int BEHAVIOR_IDLE = 0;
+	private static final int BEHAVIOR_INVESTIGATING = 1;
+	private static final int BEHAVIOR_CHASING = 2;
+	private static final int BEHAVIOR_SEARCH_SNIFF = 3;
+	private static final int BEHAVIOR_SEARCH_LISTEN = 4;
+	private static final int BEHAVIOR_SEARCH_GROUND = 5;
+	private static final TrackedData<Integer> BEHAVIOR =
+		DataTracker.registerData(BlindedZombieEntity.class, TrackedDataHandlerRegistry.INTEGER);
+
+	// Noms définis dans the_blinded.animation.json.
+	private static final RawAnimation IDLE = RawAnimation.begin().thenLoop("animation.the_blinded.idle");
+	private static final RawAnimation WALK = RawAnimation.begin().thenLoop("animation.the_blinded.walk");
+	private static final RawAnimation WALK_GROPE = RawAnimation.begin().thenLoop("animation.the_blinded.walk_grope");
+	private static final RawAnimation RUN = RawAnimation.begin().thenLoop("animation.the_blinded.run");
+	private static final RawAnimation RUN_FRENZY = RawAnimation.begin().thenLoop("animation.the_blinded.run_frenzy");
+	private static final RawAnimation SEARCH_SNIFF = RawAnimation.begin().thenLoop("animation.the_blinded.search_sniff");
+	private static final RawAnimation SEARCH_LISTEN = RawAnimation.begin().thenLoop("animation.the_blinded.search_listen");
+	private static final RawAnimation SEARCH_GROUND = RawAnimation.begin().thenLoop("animation.the_blinded.search_ground");
+
+	private static final String ATTACK_CONTROLLER = "attack";
+	private static final String[] ATTACK_TRIGGERS = {"slam", "grab_bite", "swipe"};
+
 	private final Vibrations.Callback vibrationCallback;
 	private final Vibrations.ListenerData vibrationListenerData = new Vibrations.ListenerData();
 	private final EntityGameEventHandler<Vibrations.VibrationListener> gameEventHandler;
@@ -81,6 +128,11 @@ public class BlindedZombieEntity extends ZombieEntity implements Vibrations {
 	private int vibrationCooldown;
 	/** Vrai pendant un coup porté par un joueur accroupi : les bruits de dégât/mort sont alors supprimés. */
 	private boolean silentHit;
+	/** Ticks de recherche restants (0 = ne cherche pas) et animation choisie. */
+	private int searchTicks;
+	private int searchBehavior = BEHAVIOR_SEARCH_SNIFF;
+
+	private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
 
 	public BlindedZombieEntity(EntityType<? extends ZombieEntity> entityType, World world) {
 		super(entityType, world);
@@ -97,7 +149,27 @@ public class BlindedZombieEntity extends ZombieEntity implements Vibrations {
 	/** Dark + sur le sol, comme le zombie vanilla, et en dessous de Y -8 pour les spawns naturels. */
 	public static boolean canSpawn(EntityType<BlindedZombieEntity> type, ServerWorldAccess world, SpawnReason reason, BlockPos pos, Random random) {
 		boolean natural = reason == SpawnReason.NATURAL || reason == SpawnReason.CHUNK_GENERATION;
-		return HostileEntity.canSpawnInDark(type, world, reason, pos, random) && (!natural || pos.getY() <= MAX_SPAWN_Y);
+		if (!HostileEntity.canSpawnInDark(type, world, reason, pos, random)) {
+			return false;
+		}
+		if (!natural) {
+			return true;
+		}
+		if (pos.getY() > MAX_SPAWN_Y) {
+			return false;
+		}
+		// Plafond de densité : le plafond de monstres vanilla ne distingue pas les espèces, donc dans le
+		// Deep Dark (où nous sommes le seul monstre) rien d'autre ne limiterait les aveugles.
+		int nearby = world.toServerWorld()
+			.getEntitiesByClass(BlindedZombieEntity.class, new Box(pos).expand(DENSITY_RADIUS), entity -> true)
+			.size();
+		return nearby < MAX_NEARBY;
+	}
+
+	@Override
+	protected void initDataTracker(DataTracker.Builder builder) {
+		super.initDataTracker(builder);
+		builder.add(BEHAVIOR, BEHAVIOR_IDLE);
 	}
 
 	// ----- Pas de version bébé -----
@@ -117,6 +189,7 @@ public class BlindedZombieEntity extends ZombieEntity implements Vibrations {
 	protected void initGoals() {
 		this.goalSelector.add(2, new ZombieAttackGoal(this, 1.0, false));
 		this.goalSelector.add(3, new InvestigateVibrationGoal(this, 1.0));
+		this.goalSelector.add(4, new SearchGoal(this));
 		this.goalSelector.add(7, new WanderAroundFarGoal(this, 1.0));
 		this.goalSelector.add(8, new LookAroundGoal(this));
 		// Il se défend seulement : il riposte à qui le frappe.
@@ -132,18 +205,56 @@ public class BlindedZombieEntity extends ZombieEntity implements Vibrations {
 		investigatePos = null;
 	}
 
+	public boolean isSearching() {
+		return searchTicks > 0;
+	}
+
+	/** Lance une recherche à tâtons : renifler, écouter ou palper le sol, choisi au hasard. */
+	public void beginSearch() {
+		searchTicks = SEARCH_MIN_TICKS + random.nextInt(SEARCH_MAX_TICKS - SEARCH_MIN_TICKS + 1);
+		searchBehavior = BEHAVIOR_SEARCH_SNIFF + random.nextInt(3);
+	}
+
 	// ----- Écoute des vibrations -----
 
 	public int getListeningRange() {
 		return BASE_LISTENING_RANGE;
 	}
 
-	/** Cibles qu'un zombie vanilla attaque aussi, hors créatif et spectateur. */
-	private boolean isHeardTarget(@Nullable Entity entity) {
-		return entity instanceof LivingEntity living
-			&& living.isAlive()
-			&& EntityPredicates.EXCEPT_CREATIVE_OR_SPECTATOR.test(living)
-			&& (living instanceof PlayerEntity || living instanceof MerchantEntity || living instanceof IronGolemEntity);
+	/**
+	 * Le joueur à l'origine d'un bruit, ou null. Même logique que le Sculk Shrieker : le joueur lui-même,
+	 * sa monture, ses projectiles et les objets qu'il a lâchés. Créatif et spectateur sont ignorés.
+	 */
+	@Nullable
+	private static PlayerEntity getResponsiblePlayer(@Nullable Entity source) {
+		PlayerEntity player = null;
+		if (source instanceof PlayerEntity p) {
+			player = p;
+		} else if (source != null && source.getControllingPassenger() instanceof PlayerEntity p) {
+			player = p;
+		} else if (source instanceof ProjectileEntity projectile && projectile.getOwner() instanceof PlayerEntity p) {
+			player = p;
+		} else if (source instanceof ItemEntity item && item.getOwner() instanceof PlayerEntity p) {
+			player = p;
+		}
+		return player != null && EntityPredicates.EXCEPT_CREATIVE_OR_SPECTATOR.test(player) ? player : null;
+	}
+
+	/**
+	 * Un autre zombie (de sa faction ou vanilla) n'est jamais une cible, sauf s'il porte l'effet
+	 * Provocation. Cette méthode est la seule à changer quand l'effet existera.
+	 */
+	@Override
+	public boolean canTarget(LivingEntity target) {
+		if (target instanceof ZombieEntity && !isProvoked(target)) {
+			return false;
+		}
+		return super.canTarget(target);
+	}
+
+	/** Pas encore d'effet Provocation dans le mod : personne n'est provoqué. */
+	private boolean isProvoked(LivingEntity target) {
+		return false;
 	}
 
 	@Override
@@ -155,6 +266,10 @@ public class BlindedZombieEntity extends ZombieEntity implements Vibrations {
 			if (vibrationCooldown > 0) {
 				vibrationCooldown--;
 			}
+			if (searchTicks > 0) {
+				searchTicks--;
+			}
+			updateBehavior();
 			if (heardTarget != null && (--heardTargetTicks <= 0 || !heardTarget.isAlive())) {
 				// On n'efface que la cible qu'il a entendue : pas celle que RevengeGoal a posée.
 				if (getTarget() == heardTarget) {
@@ -164,6 +279,21 @@ public class BlindedZombieEntity extends ZombieEntity implements Vibrations {
 			}
 		}
 		super.tick();
+	}
+
+	/** Recalcule l'état d'animation. DataTracker#set ne synchronise que si la valeur change. */
+	private void updateBehavior() {
+		int behavior;
+		if (getTarget() != null) {
+			behavior = BEHAVIOR_CHASING;
+		} else if (searchTicks > 0) {
+			behavior = searchBehavior;
+		} else if (investigatePos != null) {
+			behavior = BEHAVIOR_INVESTIGATING;
+		} else {
+			behavior = BEHAVIOR_IDLE;
+		}
+		getDataTracker().set(BEHAVIOR, behavior);
 	}
 
 	@Override
@@ -209,12 +339,8 @@ public class BlindedZombieEntity extends ZombieEntity implements Vibrations {
 				return false;
 			}
 			Entity source = emitter.sourceEntity();
-			// Il s'ignore lui-même, et ignore les autres zombies : sinon une troupe s'attirerait en boucle.
-			if (source == BlindedZombieEntity.this || source instanceof ZombieEntity) {
-				return false;
-			}
-			// Un animal ou un mob qui marche ne l'intéresse pas ; un projectile ou un bloc, si.
-			return !(source instanceof LivingEntity) || isHeardTarget(source);
+			// Il n'écoute que le joueur : ni les autres mobs, ni les blocs, ni lui-même.
+			return source != BlindedZombieEntity.this && getResponsiblePlayer(source) != null;
 		}
 
 		/**
@@ -225,10 +351,12 @@ public class BlindedZombieEntity extends ZombieEntity implements Vibrations {
 		public void accept(ServerWorld world, BlockPos pos, RegistryEntry<GameEvent> event, @Nullable Entity sourceEntity, @Nullable Entity entity, float distance) {
 			vibrationCooldown = VIBRATION_COOLDOWN_TICKS;
 			investigatePos = pos;
+			searchTicks = 0; // un nouveau bruit interrompt la recherche en cours
 
-			// Un projectile (entity != null) ne désigne PAS son lanceur : il attire seulement vers le point d'impact.
-			if (entity == null && isHeardTarget(sourceEntity)) {
-				heardTarget = (LivingEntity) sourceEntity;
+			// Seul le joueur lui-même est ciblé. Un projectile, un objet lâché ou une monture désignent un lieu,
+			// pas une cible : c'est ce qui permet de l'éloigner avec une boule de neige.
+			if (sourceEntity instanceof PlayerEntity player) {
+				heardTarget = player;
 				heardTargetTicks = HEARD_TARGET_TICKS;
 				setTarget(heardTarget);
 			}
@@ -239,6 +367,8 @@ public class BlindedZombieEntity extends ZombieEntity implements Vibrations {
 
 	@Override
 	public boolean tryAttack(Entity target) {
+		// Variante au hasard côté serveur : triggerAnim la synchronise vers tous les clients.
+		triggerAnim(ATTACK_CONTROLLER, ATTACK_TRIGGERS[random.nextInt(ATTACK_TRIGGERS.length)]);
 		boolean hit = super.tryAttack(target);
 		if (hit && target instanceof LivingEntity living && random.nextFloat() < DARKNESS_CHANCE) {
 			living.addStatusEffect(new StatusEffectInstance(StatusEffects.DARKNESS, DARKNESS_TICKS), this);
@@ -272,5 +402,37 @@ public class BlindedZombieEntity extends ZombieEntity implements Vibrations {
 	@Override
 	protected boolean burnsInDaylight() {
 		return false;
+	}
+
+	// ----- Animations GeckoLib -----
+
+	@Override
+	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+		controllers.add(new AnimationController<>(this, "movement", 5, this::movementPredicate));
+
+		// Ne joue rien seul : démarre sur triggerAnim("attack", "<variante>").
+		controllers.add(new AnimationController<>(this, ATTACK_CONTROLLER, 0, state -> PlayState.STOP)
+			.triggerableAnim("slam", RawAnimation.begin().thenPlay("animation.the_blinded.attack_slam"))
+			.triggerableAnim("grab_bite", RawAnimation.begin().thenPlay("animation.the_blinded.attack_grab_bite"))
+			.triggerableAnim("swipe", RawAnimation.begin().thenPlay("animation.the_blinded.attack_swipe")));
+	}
+
+	private PlayState movementPredicate(AnimationState<BlindedZombieEntity> state) {
+		boolean moving = state.isMoving();
+		return state.setAndContinue(switch (getDataTracker().get(BEHAVIOR)) {
+			// Course : variante « frénésie » quand il est blessé à moitié ou moins (vie synchronisée au client).
+			case BEHAVIOR_CHASING -> !moving ? IDLE : getHealth() <= getMaxHealth() / 2 ? RUN_FRENZY : RUN;
+			// À tâtons vers un bruit.
+			case BEHAVIOR_INVESTIGATING -> moving ? WALK_GROPE : IDLE;
+			case BEHAVIOR_SEARCH_SNIFF -> SEARCH_SNIFF;
+			case BEHAVIOR_SEARCH_LISTEN -> SEARCH_LISTEN;
+			case BEHAVIOR_SEARCH_GROUND -> SEARCH_GROUND;
+			default -> moving ? WALK : IDLE;
+		});
+	}
+
+	@Override
+	public AnimatableInstanceCache getAnimatableInstanceCache() {
+		return geoCache;
 	}
 }

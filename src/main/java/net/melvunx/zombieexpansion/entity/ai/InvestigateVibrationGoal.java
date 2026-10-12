@@ -52,7 +52,9 @@ public class InvestigateVibrationGoal extends Goal {
 			goToInvestigatePos();
 		}
 		if (mob.squaredDistanceTo(Vec3d.ofCenter(pos)) < 4.0) {
+			// Arrivé : plus rien à voir (il est aveugle), il cherche à tâtons avant de repartir.
 			mob.clearInvestigation();
+			mob.beginSearch();
 		}
 	}
 
