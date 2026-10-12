@@ -107,7 +107,7 @@ src/main/generated/           # produit par runDatagen, ne pas éditer
 | Zombie gelé | Biomes enneigés | Coups qui gèlent | `frozenTicks`, attributs | ⭐ |
 | Zombie aveugle (*The Blinded*) | Deep Dark (cœur), puis tout l'Overworld sous Y -8 (comme l'Enderman) | Chasse au bruit, plus rapide | `GameEventListener` (vibrations comme le Warden), ciblage sans ligne de vue ; accroupi = indétectable | ⭐⭐ |
 | Zombie caméléon | Jungle | Se fond dans le décor | V1 : texture camouflée + immobilité ; V2 : renderer teinté `BiomeColors` / transparence | ⭐⭐⭐ |
-| Zombie lanceur | À définir | Lance ses membres | Entité projectile + `DataTracker` pour masquer le bras sur le modèle | ⭐⭐⭐ |
+| Zombie lanceur | Faction zombie vanilla (surface, partie « facile » du mod) | Lance ses membres | Entité projectile + `DataTracker` pour masquer le bras sur le modèle | ⭐⭐⭐ |
 | Zombie général | Toutes régions | Renforce la horde selon le nombre | Comptage périodique des alliés proches + modificateurs d'attributs ; goal « suivre le leader » ; sa mort fait perdre les bonus | ⭐⭐⭐ |
 | Zombie marchand pacifiste | Villages | Vend les items du mod, protège son maître | Interface `Merchant` ; ne pas hériter de `Monster` (pour l'Iron Golem) ; maître stocké par UUID ; goal de défense | ⭐⭐⭐⭐ |
 | Hostilité régionale | — | Les zombies attaquent ceux d'autres régions | Tags d'entité par région + `ActiveTargetGoal` avec prédicat | ⭐⭐ |
@@ -127,9 +127,9 @@ src/main/generated/           # produit par runDatagen, ne pas éditer
 **Biomes** : définis par le tag `zombie_expansion:frost_faction_spawns` (généré par `ModBiomeTagProvider`, donc modifiable par datapack). Snowy Plains, Ice Spikes, Snowy Taiga, Snowy Beach, Grove, Snowy Slopes, Jagged Peaks, Frozen Peaks, Windswept Hills, Windswept Gravelly Hills, Taiga, Old Growth Pine/Spruce Taiga, Frozen River, Frozen Ocean, Deep Frozen Ocean, Cold Ocean. **Windswept Forest** est mixte (tag `frost_faction_mixed_spawns`) : 70 % gelé / 30 % vanilla.
 
 **Règles de spawn** :
-- Le zombie gelé **remplace** le zombie vanilla dans ces biomes en copiant le poids et la taille de groupe d'origine du biome (95 presque partout, 100 en Old Growth Pine Taiga). Ne pas coder de poids en dur. Les variantes de la faction seront, elles, à poids bas.
+- Le zombie gelé est **ajouté** avec le poids et la taille de groupe d'origine du zombie du biome (95 presque partout, 100 en Old Growth Pine Taiga). Ne pas coder de poids en dur. Le zombie vanilla **reste dans la liste** (c'est lui qui apparaît sous terre) ; il est refusé en surface par le mixin. Seul le biome mixte réduit le vanilla à 30 %. Les variantes de la faction seront, elles, à poids bas.
 - Les zombies villageois, noyés et husks restent vanilla.
-- **Surface = gelé, sous terre = vanilla** : le gelé exige le ciel visible (`FrozenZombieEntity.canSpawn`), et `SpawnRestrictionMixin` refuse le zombie vanilla en surface dans le tag. Les biomes sont 3D : une grotte sous des Snowy Plains *est* Snowy Plains, c'est la visibilité du ciel qui distingue.
+- **Surface = gelé, sous terre = vanilla** : le gelé exige le ciel visible (`FrozenZombieEntity.canSpawn`), et `SpawnRestrictionMixin` refuse le zombie vanilla en surface dans le tag. Chaque position n'accepte donc qu'un des deux, l'autre est une tentative perdue. Les biomes sont 3D : une grotte sous des Snowy Plains *est* Snowy Plains, c'est la visibilité du ciel qui distingue.
 - La température d'un biome n'est **pas** un critère de spawn : Stony Shore et Windswept Hills valent tous deux 0,2 alors qu'ils ne vont pas dans le même camp. Toujours passer par les tags.
 - `/zombie_expansion biome` affiche biome, température, région et poids actifs : l'utiliser pour vérifier un spawn.
 
@@ -175,15 +175,19 @@ Objectif de design : c'est la faction **la plus puissante**. L'exploration des p
 | Prophète du Sculk | **Chef (pas un boss)** | Voir détail ci-dessous | Logique de chef commune (général, chaman) | ⭐⭐⭐⭐ |
 
 **Zombie aveugle** (implémenté, `BlindedZombieEntity`, id `blinded_zombie`, nom EN « The Blinded », assets `the_blinded.*`) :
-- **Spawn** : origine Deep Dark (poids 20), mais présent **dans tout l'Overworld sous Y -8** (poids 4, rare), comme l'Enderman. Groupes de 2 à 3. Seuls les biomes ayant déjà des monstres reçoivent l'entrée (biome champignon exclu, biomes de mods respectés). Aucun bébé (`setBaby` neutralisé).
+- **Spawn** : origine Deep Dark (poids 20), mais présent **dans tout l'Overworld sous Y -8**, comme l'Enderman. Groupes de 2 à 3. Sous terre il représente **20 % des zombies** (80 % zombie vanilla) : son poids vaut 25 % du poids du zombie du biome (`AbyssSpawns.blindedWeight`, donc 24 pour 95, et réduit en biome mixte). Seuls les biomes ayant déjà des monstres reçoivent l'entrée (biome champignon exclu, biomes de mods respectés). Aucun bébé (`setBaby` neutralisé).
+- **Ancient City** : la structure vanilla interdit tout spawn de monstre sur sa boîte englobante (`spawn_overrides.monster = []`), donc rien n'y apparaît, même dans le biome Deep Dark. Choix de design vanilla, non contourné pour l'instant.
+- **Tester** : le mode Spectateur désactive le spawn autour du joueur ; utiliser Survie ou Créatif.
 - **Plafond de densité** : pas de spawn naturel s'il y a déjà 5 aveugles à moins de 24 blocs (`MAX_NEARBY`, `DENSITY_RADIUS`). Le plafond de monstres vanilla est partagé entre espèces et ne limiterait rien dans le Deep Dark, où ils sont seuls.
-- **Stats** : 14 PV, vitesse ×1,15 (0,23 → 0,2645), portée d'écoute **12 blocs** (`getListeningRange()`, point d'accroche de l'effet Ouïe aiguisée).
+- **Stats** : 20 PV (comme le zombie vanilla), vitesse ×1,15 (0,23 → 0,2645), portée d'écoute **12 blocs** (`getListeningRange()`, point d'accroche de l'effet Ouïe aiguisée).
 - **Écoute** : aucun `ActiveTargetGoal`. Mêmes événements que le Warden (tag `warden_can_listen`) via `Vibrations`, mais **seul le joueur** est entendu : ses pas, sa monture, ses projectiles et les objets qu'il lâche (même logique que le Sculk Shrieker). Un projectile ou un objet désigne un lieu, pas une cible : il attire vers l'impact sans cibler le lanceur (`InvestigateVibrationGoal`), puis il cherche sur place (`SearchGoal`). Accroupi = pas de vibration de pas = indétectable.
 - **Alliés** : ne cible jamais un membre de `abyss_faction` ni de `vanilla_zombie_faction` (`canTarget`, par tags), sauf cible portant l'effet Provocation (`isProvoked`, à brancher quand l'effet existera).
 - **Mort discrète** : un coup d'un joueur accroupi supprime les événements `ENTITY_DAMAGE` / `ENTITY_DIE`, donc les autres aveugles n'entendent rien.
 - **Les shriekers** : il ne les active pas (vanilla : un shrieker n'accepte que les vibrations d'un joueur).
 - **Darkness** : 10 % par coup, 100 ticks (durée à valider).
-- **Animations** (état synchronisé par `DataTracker` `BEHAVIOR`) : `idle`, `walk` (errance), `walk_grope` (en route vers un bruit), `run` (poursuite) / `run_frenzy` (poursuite avec ≤ 50 % de vie), `attack_slam` / `attack_grab_bite` / `attack_swipe` (au hasard à chaque attaque), `search_sniff` / `search_listen` / `search_ground` (au hasard, 3 à 5 s, à l'arrivée sur un bruit). Les trois animations de recherche sont bouclées : ce sont des états.
+- **Loot** : chair putréfiée 0-2 et **fragments d'écho 0-2** (sans condition, moyenne 1 par mort).
+- **Sons** : à ajouter (entend un bruit, recherche, attaque, mort). Pas encore de `sounds.json`.
+- **Animations** (état synchronisé par `DataTracker` `BEHAVIOR`) : `idle`, `walk` (errance), `walk_grope` (en route vers un bruit), `run` / `run_frenzy` (poursuite, variante tirée au hasard à chaque nouvelle poursuite, 50 %), `attack_slam` / `attack_grab_bite` / `attack_swipe` (au hasard à chaque attaque), `search_sniff` / `search_listen` / `search_ground` (au hasard, 3 à 5 s, à l'arrivée sur un bruit). Les trois animations de recherche sont bouclées : ce sont des états.
 - **Texture** : `textures/entity/the_blinded.png` (64×64).
 
 **Prophète du Sculk** : zombie couvert de sculk avec un catalyseur dans la poitrine. Pas de barre de boss, reste en retrait et fuit le joueur.
@@ -194,10 +198,10 @@ Objectif de design : c'est la faction **la plus puissante**. L'exploration des p
   **Spawn** : le Deep Dark n'a aucun spawn de monstres en vanilla. Ajouter les spawns avec `BiomeModifications.addSpawn` et une restriction personnalisée (`SpawnRestriction`) qui vérifie `pos.getY() <= -8`. Surveiller la fréquence pour ne pas rendre la zone invivable.
 
 **Loot** :
-- Zombies du Deep Dark : chair putréfiée + **fragments d'écho**.
+- Zombies du Deep Dark : chair putréfiée + **0 à 2 fragments d'écho**.
 - Lanceur d'améthyste : chair putréfiée + **éclats d'améthyste** + faible chance de lâcher son **arbalète d'améthyste**.
 - Mineur des profondeurs : chair putréfiée + **1 % de chance pour chacun** des 5 localisateurs de minerai.
-  **À définir** : durée exacte du Darkness du zombie aveugle ; temps de recharge des salves du Prophète et du faisceau de redstone ; taux de drop des fragments d'écho et de l'arbalète ; si les tirs du lanceur d'améthyste appliquent Surbrillance et Provocation au joueur ; « pression des profondeurs » (bonus de stats selon le Y) à valider.
+  **À définir** : durée exacte du Darkness du zombie aveugle ; temps de recharge des salves du Prophète et du faisceau de redstone ; taux de drop de l'arbalète ; si les tirs du lanceur d'améthyste appliquent Surbrillance et Provocation au joueur ; « pression des profondeurs » (bonus de stats selon le Y) à valider.
 
 ### Faction du zombie vanilla (nom à définir)
 
@@ -207,6 +211,7 @@ Faction des zombies « classiques » de la surface. Membres prévus :
 - **Voleur de torche** (alias zombie porte-torche) : éteint ou vole les torches (sa variante des profondeurs est l'Éteigneur des Abysses)
 - **Zombie de géode** : armure de cristaux qui renvoie des dégâts, à briser à la pioche
 - **Zombie infecteur** : transforme les animaux tués en variantes zombies
+- **Zombie lanceur** : lance ses membres (projectile + bras masqué sur le modèle via `DataTracker`). Faction de la partie « facile » du mod.
 
 ## Items prévus
 
