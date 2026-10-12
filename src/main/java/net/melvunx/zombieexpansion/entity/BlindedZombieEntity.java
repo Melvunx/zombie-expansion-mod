@@ -73,7 +73,7 @@ public class BlindedZombieEntity extends ZombieEntity implements Vibrations, Geo
 
 	/** 15 % plus rapide que le zombie vanilla (0,23). */
 	private static final double MOVEMENT_SPEED = 0.23 * 1.15;
-	private static final double MAX_HEALTH = 14.0;
+	private static final double MAX_HEALTH = 20.0;
 
 	private static final float DARKNESS_CHANCE = 0.10f;
 	/** Durée de l'effet Darkness : à valider (le CLAUDE.md dit « court », 100 ticks = 5 s). */
@@ -102,6 +102,9 @@ public class BlindedZombieEntity extends ZombieEntity implements Vibrations, Geo
 	private static final int BEHAVIOR_SEARCH_SNIFF = 3;
 	private static final int BEHAVIOR_SEARCH_LISTEN = 4;
 	private static final int BEHAVIOR_SEARCH_GROUND = 5;
+	/** Poursuite avec l'animation run_frenzy ; tirée au hasard à chaque nouvelle poursuite. */
+	private static final int BEHAVIOR_CHASING_FRENZY = 6;
+	private static final float FRENZY_CHANCE = 0.5f;
 	private static final TrackedData<Integer> BEHAVIOR =
 		DataTracker.registerData(BlindedZombieEntity.class, TrackedDataHandlerRegistry.INTEGER);
 
@@ -133,6 +136,8 @@ public class BlindedZombieEntity extends ZombieEntity implements Vibrations, Geo
 	/** Ticks de recherche restants (0 = ne cherche pas) et animation choisie. */
 	private int searchTicks;
 	private int searchBehavior = BEHAVIOR_SEARCH_SNIFF;
+	private boolean wasChasing;
+	private boolean frenzied;
 
 	private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
 
@@ -210,7 +215,7 @@ public class BlindedZombieEntity extends ZombieEntity implements Vibrations, Geo
 	/** Nom d'état pour les commandes de diagnostic : idle, investigating, chasing ou searching. */
 	public String getBehaviorName() {
 		return switch (getDataTracker().get(BEHAVIOR)) {
-			case BEHAVIOR_CHASING -> "chasing";
+			case BEHAVIOR_CHASING, BEHAVIOR_CHASING_FRENZY -> "chasing";
 			case BEHAVIOR_INVESTIGATING -> "investigating";
 			case BEHAVIOR_SEARCH_SNIFF, BEHAVIOR_SEARCH_LISTEN, BEHAVIOR_SEARCH_GROUND -> "searching";
 			default -> "idle";
@@ -300,8 +305,15 @@ public class BlindedZombieEntity extends ZombieEntity implements Vibrations, Geo
 	/** Recalcule l'état d'animation. DataTracker#set ne synchronise que si la valeur change. */
 	private void updateBehavior() {
 		int behavior;
-		if (getTarget() != null) {
-			behavior = BEHAVIOR_CHASING;
+		boolean chasing = getTarget() != null;
+		if (chasing && !wasChasing) {
+			// Nouvelle poursuite : on retire au sort la variante de course, qui reste la même jusqu'à la fin.
+			frenzied = random.nextFloat() < FRENZY_CHANCE;
+		}
+		wasChasing = chasing;
+
+		if (chasing) {
+			behavior = frenzied ? BEHAVIOR_CHASING_FRENZY : BEHAVIOR_CHASING;
 		} else if (searchTicks > 0) {
 			behavior = searchBehavior;
 		} else if (investigatePos != null) {
@@ -436,8 +448,9 @@ public class BlindedZombieEntity extends ZombieEntity implements Vibrations, Geo
 	private PlayState movementPredicate(AnimationState<BlindedZombieEntity> state) {
 		boolean moving = state.isMoving();
 		return state.setAndContinue(switch (getDataTracker().get(BEHAVIOR)) {
-			// Course : variante « frénésie » quand il est blessé à moitié ou moins (vie synchronisée au client).
-			case BEHAVIOR_CHASING -> !moving ? IDLE : getHealth() <= getMaxHealth() / 2 ? RUN_FRENZY : RUN;
+			// Course : run ou run_frenzy, tirés au hasard à chaque poursuite côté serveur (synchronisés).
+			case BEHAVIOR_CHASING -> moving ? RUN : IDLE;
+			case BEHAVIOR_CHASING_FRENZY -> moving ? RUN_FRENZY : IDLE;
 			// À tâtons vers un bruit.
 			case BEHAVIOR_INVESTIGATING -> moving ? WALK_GROPE : IDLE;
 			case BEHAVIOR_SEARCH_SNIFF -> SEARCH_SNIFF;
