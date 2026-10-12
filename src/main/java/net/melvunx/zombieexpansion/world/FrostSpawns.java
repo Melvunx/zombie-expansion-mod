@@ -15,11 +15,14 @@ import net.minecraft.entity.SpawnGroup;
 import net.minecraft.world.biome.SpawnSettings;
 
 /**
- * Remplace le zombie vanilla par le zombie gelé dans les biomes froids.
+ * Ajoute le zombie gelé dans les biomes froids, à la place du zombie vanilla *en surface*.
  *
  * Le poids et la taille de groupe du zombie sont **recopiés depuis le biome lui-même**
- * (95 presque partout, 100 en Old Growth Pine Taiga) : on ne code aucun poids en dur,
- * donc le remplacement est neutre pour l'équilibre global des monstres.
+ * (95 presque partout, 100 en Old Growth Pine Taiga) : on ne code aucun poids en dur.
+ *
+ * Le zombie vanilla **reste dans la liste** des biomes froids : c'est lui qui apparaît sous terre.
+ * Le gelé exige le ciel visible (FrozenZombieEntity#canSpawn) et SpawnRestrictionMixin refuse le
+ * vanilla en surface ; chaque position n'accepte donc qu'un des deux.
  *
  * Le zombie villageois n'est volontairement pas touché.
  */
@@ -34,17 +37,28 @@ public final class FrostSpawns {
 		BiomeModifications.create(ZombieExpansion.id("frost_zombie_replacement"))
 			.add(ModificationPhase.REPLACEMENTS,
 				BiomeSelectors.tag(ModBiomeTags.FROST_FACTION_SPAWNS),
-				(selection, modification) -> swap(selection, modification, 1.0f));
+				(selection, modification) -> addFrozen(selection, modification, 1.0f));
 
 		BiomeModifications.create(ZombieExpansion.id("frost_zombie_mix"))
 			.add(ModificationPhase.REPLACEMENTS,
 				BiomeSelectors.tag(ModBiomeTags.FROST_FACTION_MIXED_SPAWNS),
-				(selection, modification) -> swap(selection, modification, MIXED_FROST_SHARE));
+				(selection, modification) -> addFrozen(selection, modification, MIXED_FROST_SHARE));
 	}
 
-	private static void swap(BiomeSelectionContext selection,
-							 BiomeModificationContext modification,
-							 float frostShare) {
+	/**
+	 * Poids que garde le zombie vanilla dans un biome après nos modifications. Utile à qui veut
+	 * se régler *sur* lui (voir AbyssSpawns) : en biome mixte il est réduit au profit du gelé.
+	 */
+	public static int vanillaZombieWeightAfterReplacement(BiomeSelectionContext selection, int originalWeight) {
+		if (selection.hasTag(ModBiomeTags.FROST_FACTION_MIXED_SPAWNS)) {
+			return originalWeight - Math.round(originalWeight * MIXED_FROST_SHARE);
+		}
+		return originalWeight;
+	}
+
+	private static void addFrozen(BiomeSelectionContext selection,
+								  BiomeModificationContext modification,
+								  float frostShare) {
 		Optional<SpawnSettings.SpawnEntry> original = findZombie(selection);
 		if (original.isEmpty()) {
 			return; // biome sans zombie (ex. Deep Dark) : rien à remplacer
@@ -53,18 +67,23 @@ public final class FrostSpawns {
 		SpawnSettings.SpawnEntry zombie = original.get();
 		int totalWeight = zombie.getWeight().getValue();
 		int frostWeight = Math.round(totalWeight * frostShare);
-		int vanillaWeight = totalWeight - frostWeight;
 
-		modification.getSpawnSettings().removeSpawnsOfEntityType(EntityType.ZOMBIE);
-		if (vanillaWeight > 0) {
-			modification.getSpawnSettings().addSpawn(SpawnGroup.MONSTER,
-				new SpawnSettings.SpawnEntry(EntityType.ZOMBIE, vanillaWeight, zombie.minGroupSize, zombie.maxGroupSize));
+		// Biome mixte : le vanilla cède une part de son poids au gelé. Biome entièrement froid : on ne
+		// touche pas au vanilla, il reste le zombie des grottes.
+		if (frostShare < 1.0f) {
+			int vanillaWeight = totalWeight - frostWeight;
+			modification.getSpawnSettings().removeSpawnsOfEntityType(EntityType.ZOMBIE);
+			if (vanillaWeight > 0) {
+				modification.getSpawnSettings().addSpawn(SpawnGroup.MONSTER,
+					new SpawnSettings.SpawnEntry(EntityType.ZOMBIE, vanillaWeight, zombie.minGroupSize, zombie.maxGroupSize));
+			}
 		}
 		modification.getSpawnSettings().addSpawn(SpawnGroup.MONSTER,
 			new SpawnSettings.SpawnEntry(ModEntities.FROZEN_ZOMBIE, frostWeight, zombie.minGroupSize, zombie.maxGroupSize));
 	}
 
-	private static Optional<SpawnSettings.SpawnEntry> findZombie(BiomeSelectionContext selection) {
+	/** L'entrée du zombie vanilla dans un biome, telle que le jeu l'a avant toute modification. */
+	static Optional<SpawnSettings.SpawnEntry> findZombie(BiomeSelectionContext selection) {
 		return selection.getBiome().getSpawnSettings().getSpawnEntries(SpawnGroup.MONSTER).getEntries().stream()
 			.filter(entry -> entry.type == EntityType.ZOMBIE)
 			.findFirst();
