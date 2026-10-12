@@ -102,6 +102,11 @@ public class FrozenZombieEntity extends ZombieEntity implements GeoEntity {
 		builder.add(CONVERTING_TO_ZOMBIE, false);
 	}
 
+	/** Ticks restants avant de redevenir un zombie ; n'a de sens que si isConvertingToZombie(). */
+	public int getConversionTicks() {
+		return conversionTicks;
+	}
+
 	public boolean isConvertingToZombie() {
 		return getDataTracker().get(CONVERTING_TO_ZOMBIE);
 	}

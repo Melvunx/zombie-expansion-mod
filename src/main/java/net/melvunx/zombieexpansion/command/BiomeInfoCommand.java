@@ -1,6 +1,6 @@
 package net.melvunx.zombieexpansion.command;
 
-import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 
 import net.melvunx.zombieexpansion.ZombieExpansion;
@@ -34,9 +34,9 @@ public final class BiomeInfoCommand {
 	private BiomeInfoCommand() {
 	}
 
-	public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-		dispatcher.register(CommandManager.literal(ZombieExpansion.MOD_ID)
-			.then(CommandManager.literal("biome").executes(BiomeInfoCommand::run)));
+	/** Branche « biome » de /zombie_expansion (assemblée dans ModCommands). */
+	public static LiteralArgumentBuilder<ServerCommandSource> node() {
+		return CommandManager.literal("biome").executes(BiomeInfoCommand::run);
 	}
 
 	private static int run(CommandContext<ServerCommandSource> context) {
