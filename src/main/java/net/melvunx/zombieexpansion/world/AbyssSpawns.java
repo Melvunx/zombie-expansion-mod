@@ -9,15 +9,21 @@ import net.minecraft.world.biome.BiomeKeys;
 /**
  * Spawns de la faction des Abysses.
  *
- * Contrairement à la faction Givre, rien n'est *remplacé* : le Deep Dark n'a aucune entrée de
- * monstre en vanilla, on en ajoute donc une. La limite d'altitude est dans
- * {@code BlindedZombieEntity#canSpawn}, car un BiomeModifications ne connaît pas l'altitude.
+ * Le zombie aveugle suit la logique de l'Enderman : originaire d'un biome précis (le Deep Dark),
+ * mais présent partout où les conditions sont réunies (ici : sous Y -8) dans tout l'Overworld.
+ * La limite d'altitude est dans {@code BlindedZombieEntity#canSpawn}, car un BiomeModifications
+ * ne connaît pas l'altitude.
+ *
+ * Deux entrées :
+ *  - Deep Dark : aucun monstre en vanilla, donc l'aveugle y est seul et son poids est sans effet
+ *    relatif ; c'est le plafond de densité (canSpawn) qui borne sa fréquence ;
+ *  - partout ailleurs : poids bas, pour qu'il soit rare à côté des 500 de poids des monstres vanilla.
  */
 public final class AbyssSpawns {
-	/** Poids 10, groupes de 2 à 4 : en groupe ils sont dangereux, c'est voulu. À ajuster en jeu. */
-	private static final int WEIGHT = 10;
+	private static final int DEEP_DARK_WEIGHT = 20;
+	private static final int ELSEWHERE_WEIGHT = 4;
 	private static final int MIN_GROUP = 2;
-	private static final int MAX_GROUP = 4;
+	private static final int MAX_GROUP = 3;
 
 	private AbyssSpawns() {
 	}
@@ -25,6 +31,14 @@ public final class AbyssSpawns {
 	public static void register() {
 		BiomeModifications.addSpawn(
 			BiomeSelectors.includeByKey(BiomeKeys.DEEP_DARK),
-			SpawnGroup.MONSTER, ModEntities.BLINDED_ZOMBIE, WEIGHT, MIN_GROUP, MAX_GROUP);
+			SpawnGroup.MONSTER, ModEntities.BLINDED_ZOMBIE, DEEP_DARK_WEIGHT, MIN_GROUP, MAX_GROUP);
+
+		// Biomes de l'Overworld qui ont déjà des monstres : on respecte ainsi les biomes volontairement
+		// sans monstres (champignons) et ceux d'autres mods ou datapacks.
+		BiomeModifications.addSpawn(
+			BiomeSelectors.foundInOverworld()
+				.and(BiomeSelectors.excludeByKey(BiomeKeys.DEEP_DARK))
+				.and(context -> !context.getBiome().getSpawnSettings().getSpawnEntries(SpawnGroup.MONSTER).isEmpty()),
+			SpawnGroup.MONSTER, ModEntities.BLINDED_ZOMBIE, ELSEWHERE_WEIGHT, MIN_GROUP, MAX_GROUP);
 	}
 }
