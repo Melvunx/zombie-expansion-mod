@@ -46,6 +46,9 @@ public class ModBiomeTagProvider extends FabricTagProvider<Biome> {
 			.forceAddTag(BiomeTags.IS_SAVANNA)
 			.forceAddTag(BiomeTags.IS_NETHER);
 
+		getOrCreateTagBuilder(ModBiomeTags.ABYSS_FACTION_SPAWNS)
+			.add(BiomeKeys.DEEP_DARK);
+
 		getOrCreateTagBuilder(ModBiomeTags.FROST_FACTION_MIXED_SPAWNS)
 			.add(BiomeKeys.WINDSWEPT_FOREST);
 	}

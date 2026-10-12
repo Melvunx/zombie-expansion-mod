@@ -2,9 +2,9 @@ package net.melvunx.zombieexpansion.world;
 
 import net.fabricmc.fabric.api.biome.v1.BiomeModifications;
 import net.fabricmc.fabric.api.biome.v1.BiomeSelectors;
+import net.melvunx.zombieexpansion.registry.ModBiomeTags;
 import net.melvunx.zombieexpansion.registry.ModEntities;
 import net.minecraft.entity.SpawnGroup;
-import net.minecraft.world.biome.BiomeKeys;
 
 /**
  * Spawns de la faction des Abysses.
@@ -30,14 +30,14 @@ public final class AbyssSpawns {
 
 	public static void register() {
 		BiomeModifications.addSpawn(
-			BiomeSelectors.includeByKey(BiomeKeys.DEEP_DARK),
+			BiomeSelectors.tag(ModBiomeTags.ABYSS_FACTION_SPAWNS),
 			SpawnGroup.MONSTER, ModEntities.BLINDED_ZOMBIE, DEEP_DARK_WEIGHT, MIN_GROUP, MAX_GROUP);
 
 		// Biomes de l'Overworld qui ont déjà des monstres : on respecte ainsi les biomes volontairement
 		// sans monstres (champignons) et ceux d'autres mods ou datapacks.
 		BiomeModifications.addSpawn(
 			BiomeSelectors.foundInOverworld()
-				.and(BiomeSelectors.excludeByKey(BiomeKeys.DEEP_DARK))
+				.and(BiomeSelectors.tag(ModBiomeTags.ABYSS_FACTION_SPAWNS).negate())
 				.and(context -> !context.getBiome().getSpawnSettings().getSpawnEntries(SpawnGroup.MONSTER).isEmpty()),
 			SpawnGroup.MONSTER, ModEntities.BLINDED_ZOMBIE, ELSEWHERE_WEIGHT, MIN_GROUP, MAX_GROUP);
 	}

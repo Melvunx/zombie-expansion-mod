@@ -14,6 +14,9 @@ public final class ModBiomeTags {
 	/** Biomes où le zombie gelé remplace entièrement le zombie vanilla en surface. */
 	public static final TagKey<Biome> FROST_FACTION_SPAWNS = of("frost_faction_spawns");
 
+	/** Biome d'origine de la faction des Abysses (le Deep Dark). Ils apparaissent aussi sous Y -8 ailleurs. */
+	public static final TagKey<Biome> ABYSS_FACTION_SPAWNS = of("abyss_faction_spawns");
+
 	/** Biomes mixtes : zombies vanilla et gelés cohabitent (voir FrostSpawns.MIXED_FROST_SHARE). */
 	public static final TagKey<Biome> FROST_FACTION_MIXED_SPAWNS = of("frost_faction_mixed_spawns");
 

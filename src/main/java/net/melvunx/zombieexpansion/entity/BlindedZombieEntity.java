@@ -2,6 +2,8 @@ package net.melvunx.zombieexpansion.entity;
 
 import net.melvunx.zombieexpansion.entity.ai.InvestigateVibrationGoal;
 import net.melvunx.zombieexpansion.entity.ai.SearchGoal;
+import net.melvunx.zombieexpansion.faction.Faction;
+import net.melvunx.zombieexpansion.registry.ModEntityTypeTags;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -83,11 +85,11 @@ public class BlindedZombieEntity extends ZombieEntity implements Vibrations, Geo
 	private static final int HEARD_TARGET_TICKS = 100;
 
 	/** Altitude maximale du spawn naturel (zone des Abysses : Y -8 et en dessous). */
-	private static final int MAX_SPAWN_Y = -8;
+	private static final int MAX_SPAWN_Y = Faction.ABYSS_MAX_Y;
 
 	/** Plafond de densité : pas de nouveau spawn naturel s'il y a déjà 5 aveugles à moins de 24 blocs. */
-	private static final int MAX_NEARBY = 5;
-	private static final int DENSITY_RADIUS = 24;
+	public static final int MAX_NEARBY = 5;
+	public static final int DENSITY_RADIUS = 24;
 
 	/** Durée d'une recherche à l'arrivée sur un bruit : 3 à 5 secondes. */
 	private static final int SEARCH_MIN_TICKS = 60;
@@ -205,6 +207,16 @@ public class BlindedZombieEntity extends ZombieEntity implements Vibrations, Geo
 		investigatePos = null;
 	}
 
+	/** Nom d'état pour les commandes de diagnostic : idle, investigating, chasing ou searching. */
+	public String getBehaviorName() {
+		return switch (getDataTracker().get(BEHAVIOR)) {
+			case BEHAVIOR_CHASING -> "chasing";
+			case BEHAVIOR_INVESTIGATING -> "investigating";
+			case BEHAVIOR_SEARCH_SNIFF, BEHAVIOR_SEARCH_LISTEN, BEHAVIOR_SEARCH_GROUND -> "searching";
+			default -> "idle";
+		};
+	}
+
 	public boolean isSearching() {
 		return searchTicks > 0;
 	}
@@ -241,12 +253,16 @@ public class BlindedZombieEntity extends ZombieEntity implements Vibrations, Geo
 	}
 
 	/**
-	 * Un autre zombie (de sa faction ou vanilla) n'est jamais une cible, sauf s'il porte l'effet
-	 * Provocation. Cette méthode est la seule à changer quand l'effet existera.
+	 * Les membres de sa faction (tag abyss_faction) et les zombies vanilla (tag vanilla_zombie_faction)
+	 * ne sont jamais des cibles, sauf s'ils portent l'effet Provocation. Les relations avec les autres
+	 * factions viendront du système de relations en JSON : tant qu'il n'existe pas, on ne les cible pas
+	 * non plus par défaut, puisque seuls le joueur et ceux qui le frappent le sont.
 	 */
 	@Override
 	public boolean canTarget(LivingEntity target) {
-		if (target instanceof ZombieEntity && !isProvoked(target)) {
+		boolean protectedFromBlinded = target.getType().isIn(ModEntityTypeTags.ABYSS_FACTION)
+			|| target.getType().isIn(ModEntityTypeTags.VANILLA_ZOMBIE_FACTION);
+		if (protectedFromBlinded && !isProvoked(target)) {
 			return false;
 		}
 		return super.canTarget(target);
