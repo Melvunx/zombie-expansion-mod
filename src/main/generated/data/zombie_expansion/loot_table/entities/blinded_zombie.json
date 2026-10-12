@@ -24,15 +24,20 @@
     },
     {
       "bonus_rolls": 0.0,
-      "conditions": [
-        {
-          "chance": 0.05,
-          "condition": "minecraft:random_chance"
-        }
-      ],
       "entries": [
         {
           "type": "minecraft:item",
+          "functions": [
+            {
+              "add": false,
+              "count": {
+                "type": "minecraft:uniform",
+                "max": 2.0,
+                "min": 0.0
+              },
+              "function": "minecraft:set_count"
+            }
+          ],
           "name": "minecraft:echo_shard"
         }
       ],
