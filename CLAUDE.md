@@ -71,11 +71,11 @@ src/main/java/net/melvunx/zombieexpansion/
   datagen/                    # providers (langues, modèles, loot, tags, recettes)
   entity/                     # classes des zombies et projectiles
   entity/ai/                  # goals personnalisés (InvestigateVibrationGoal, SearchGoal)
-  faction/                    # système de factions (chargé depuis les données)
+  faction/                    # Faction (enum liée à un tag d'entités), FrostVulnerability ; relations à venir en JSON
   event/                      # hordes, raids de factions (PersistentState)
   registry/                   # ModEntities, ModItems, ModSounds...
   world/                      # spawn par biome (BiomeModifications) : FrostSpawns, AbyssSpawns
-  command/                    # commandes (/zombie_expansion biome)
+  command/                    # /zombie_expansion biome | faction | nearby [rayon] | info (racine unique dans ModCommands)
   mixin/                      # SpawnRestrictionMixin
   client/                     # code client uniquement
     ZombieExpansionClient.java  # ClientModInitializer : renderers, modèles
@@ -114,6 +114,13 @@ src/main/generated/           # produit par runDatagen, ne pas éditer
 | Factions | — | Alliances et guerres entre factions | Relations alliés/ennemis en JSON datapack, extensible aux autres mobs | ⭐⭐⭐ |
 | Raids de factions | Villages | Raids zombies par vagues | Système maison (pas le `Raid` vanilla) : `PersistentState`, vagues, `ServerBossBar` | ⭐⭐⭐⭐⭐ |
 
+
+### Factions : tags et commandes
+
+- **Une faction = un tag d'entités** (`ModEntityTypeTags`, générés par `ModEntityTypeTagProvider`) : `zombie_expansion:frost_faction`, `abyss_faction`, `vanilla_zombie_faction` (nom provisoire, la faction n'est pas encore nommée). Ajouter un membre = l'ajouter au tag, jamais un `instanceof`. L'enum `faction/Faction` lit ces tags.
+- **Position → faction dominante** (`Faction.at`) : les Abysses sous Y -8 ou dans le tag de biomes `abyss_faction_spawns` (Deep Dark), puis le Givre dans ses biomes, sinon les zombies vanilla.
+- **Commandes** (racine unique `/zombie_expansion`, branches assemblées dans `ModCommands`) : `biome` (biome, température, région, poids actifs), `faction` (faction ici et ses membres), `nearby [rayon]` (membres de chaque faction autour de soi, plus le plafond de densité des aveugles), `info` (fiche de la créature visée : faction, vie, vitesse, cible, état). Sans permission requise, `info` est réservée à un joueur.
+- **À faire** : les relations alliés/ennemis entre factions, en JSON de datapack.
 
 ### Faction du froid : « Givre »
 
@@ -172,12 +179,12 @@ Objectif de design : c'est la faction **la plus puissante**. L'exploration des p
 - **Plafond de densité** : pas de spawn naturel s'il y a déjà 5 aveugles à moins de 24 blocs (`MAX_NEARBY`, `DENSITY_RADIUS`). Le plafond de monstres vanilla est partagé entre espèces et ne limiterait rien dans le Deep Dark, où ils sont seuls.
 - **Stats** : 14 PV, vitesse ×1,15 (0,23 → 0,2645), portée d'écoute **12 blocs** (`getListeningRange()`, point d'accroche de l'effet Ouïe aiguisée).
 - **Écoute** : aucun `ActiveTargetGoal`. Mêmes événements que le Warden (tag `warden_can_listen`) via `Vibrations`, mais **seul le joueur** est entendu : ses pas, sa monture, ses projectiles et les objets qu'il lâche (même logique que le Sculk Shrieker). Un projectile ou un objet désigne un lieu, pas une cible : il attire vers l'impact sans cibler le lanceur (`InvestigateVibrationGoal`), puis il cherche sur place (`SearchGoal`). Accroupi = pas de vibration de pas = indétectable.
-- **Alliés** : ne cible **jamais** un `ZombieEntity` (sa faction, zombies vanilla, husks, noyés) via `canTarget`, sauf cible portant l'effet Provocation (`isProvoked`, à brancher quand l'effet existera).
+- **Alliés** : ne cible jamais un membre de `abyss_faction` ni de `vanilla_zombie_faction` (`canTarget`, par tags), sauf cible portant l'effet Provocation (`isProvoked`, à brancher quand l'effet existera).
 - **Mort discrète** : un coup d'un joueur accroupi supprime les événements `ENTITY_DAMAGE` / `ENTITY_DIE`, donc les autres aveugles n'entendent rien.
 - **Les shriekers** : il ne les active pas (vanilla : un shrieker n'accepte que les vibrations d'un joueur).
 - **Darkness** : 10 % par coup, 100 ticks (durée à valider).
 - **Animations** (état synchronisé par `DataTracker` `BEHAVIOR`) : `idle`, `walk` (errance), `walk_grope` (en route vers un bruit), `run` (poursuite) / `run_frenzy` (poursuite avec ≤ 50 % de vie), `attack_slam` / `attack_grab_bite` / `attack_swipe` (au hasard à chaque attaque), `search_sniff` / `search_listen` / `search_ground` (au hasard, 3 à 5 s, à l'arrivée sur un bruit). Les trois animations de recherche sont bouclées : ce sont des états.
-- **Texture** : `textures/entity/the_blinded.png` à fournir.
+- **Texture** : `textures/entity/the_blinded.png` (64×64).
 
 **Prophète du Sculk** : zombie couvert de sculk avec un catalyseur dans la poitrine. Pas de barre de boss, reste en retrait et fuit le joueur.
 - Donne aux **zombies aveugles** proches un effet personnalisé **Ouïe aiguisée** qui augmente la portée de leur écoute.
