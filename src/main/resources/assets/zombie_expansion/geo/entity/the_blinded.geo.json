@@ -1,0 +1,95 @@
+{
+	"format_version": "1.12.0",
+	"minecraft:geometry": [
+		{
+			"description": {
+				"identifier": "geometry.unknown",
+				"texture_width": 64,
+				"texture_height": 64,
+				"visible_bounds_width": 3,
+				"visible_bounds_height": 3.5,
+				"visible_bounds_offset": [0, 1.25, 0]
+			},
+			"bones": [
+				{
+					"name": "the blinded",
+					"pivot": [0, 0, 0]
+				},
+				{
+					"name": "head",
+					"parent": "the blinded",
+					"pivot": [0, 24, 0],
+					"cubes": [
+						{"origin": [-4, 24, -4], "size": [8, 8, 8], "uv": [0, 0]}
+					]
+				},
+				{
+					"name": "left_tendril",
+					"parent": "head",
+					"pivot": [-7, 27, 0],
+					"cubes": [
+						{"origin": [-14.0005, 23.00048, 0.01165], "size": [7, 10, 0], "pivot": [-9, 29, 0], "rotation": [179.78218, 0.00473, 179.99048], "uv": [0, 17]}
+					]
+				},
+				{
+					"name": "right_tendril",
+					"parent": "head",
+					"pivot": [8, 29, 0],
+					"cubes": [
+						{"origin": [3.9995, 23.00048, 0.01165], "size": [7, 10, 0], "pivot": [7, 29, 0], "rotation": [-179.78218, -0.00473, -0.00952], "uv": [0, 30]}
+					]
+				},
+				{
+					"name": "right_leg",
+					"parent": "the blinded",
+					"pivot": [-1.9, 12, 0],
+					"cubes": [
+						{"origin": [-4, 0, -2], "size": [4, 12, 4], "uv": [16, 48]}
+					]
+				},
+				{
+					"name": "left_leg",
+					"parent": "the blinded",
+					"pivot": [1.9, 12, 0],
+					"mirror": true,
+					"cubes": [
+						{"origin": [0, 0, -2], "size": [4, 12, 4], "uv": [0, 48]}
+					]
+				},
+				{
+					"name": "right_arm",
+					"parent": "the blinded",
+					"pivot": [-5, 22, 0],
+					"cubes": [
+						{"origin": [-8, 12, -2], "size": [4, 12, 4], "uv": [32, 32]}
+					]
+				},
+				{
+					"name": "left_arm",
+					"parent": "the blinded",
+					"pivot": [5, 22, 0],
+					"mirror": true,
+					"cubes": [
+						{"origin": [4, 12, -2], "size": [4, 12, 4], "uv": [32, 16]}
+					]
+				},
+				{
+					"name": "body",
+					"parent": "the blinded",
+					"pivot": [0, 24, 0],
+					"cubes": [
+						{"origin": [-4, 12, -2], "size": [8, 12, 4], "uv": [32, 0]}
+					]
+				},
+				{
+					"name": "headwear",
+					"parent": "the blinded",
+					"pivot": [0, 24, 0],
+					"cubes": [
+						{"origin": [-4, 24, -4], "size": [8, 8, 8], "inflate": 0.5, "uv": [32, 48]}
+					]
+				}
+			]
+		}
+	]
+}
