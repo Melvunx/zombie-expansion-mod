@@ -70,7 +70,7 @@ src/main/java/net/melvunx/zombieexpansion/
   ZombieExpansionDataGenerator.java  # point d'entrée de la datagen
   datagen/                    # providers (langues, modèles, loot, tags, recettes)
   entity/                     # classes des zombies et projectiles
-  entity/ai/                  # goals personnalisés (InvestigateVibrationGoal)
+  entity/ai/                  # goals personnalisés (InvestigateVibrationGoal, SearchGoal)
   faction/                    # système de factions (chargé depuis les données)
   event/                      # hordes, raids de factions (PersistentState)
   registry/                   # ModEntities, ModItems, ModSounds...
@@ -105,7 +105,7 @@ src/main/generated/           # produit par runDatagen, ne pas éditer
 | Zombie / système | Biome / lieu | Idée clé | Piste technique | Difficulté |
 |---|---|---|---|---|
 | Zombie gelé | Biomes enneigés | Coups qui gèlent | `frozenTicks`, attributs | ⭐ |
-| Zombie aveugle (*The Blinded*) | Deep Dark uniquement | Chasse au bruit, plus rapide | `GameEventListener` (vibrations comme le Warden), ciblage sans ligne de vue ; accroupi = indétectable | ⭐⭐ |
+| Zombie aveugle (*The Blinded*) | Deep Dark (cœur), puis tout l'Overworld sous Y -8 (comme l'Enderman) | Chasse au bruit, plus rapide | `GameEventListener` (vibrations comme le Warden), ciblage sans ligne de vue ; accroupi = indétectable | ⭐⭐ |
 | Zombie caméléon | Jungle | Se fond dans le décor | V1 : texture camouflée + immobilité ; V2 : renderer teinté `BiomeColors` / transparence | ⭐⭐⭐ |
 | Zombie lanceur | À définir | Lance ses membres | Entité projectile + `DataTracker` pour masquer le bras sur le modèle | ⭐⭐⭐ |
 | Zombie général | Toutes régions | Renforce la horde selon le nombre | Comptage périodique des alliés proches + modificateurs d'attributs ; goal « suivre le leader » ; sa mort fait perdre les bonus | ⭐⭐⭐ |
@@ -159,7 +159,7 @@ Objectif de design : c'est la faction **la plus puissante**. L'exploration des p
 
 | Zombie | Rôle | Capacités validées | Piste technique | Difficulté |
 |---|---|---|---|---|
-| Zombie aveugle | Base | Chasse au son, plus rapide qu'un zombie normal ; déclenche les sculk shriekers ; **10 % de chance** d'infliger un court effet **Darkness** à chaque coup | `GameEventListener`, ciblage sans ligne de vue ; `StatusEffects.DARKNESS` sur `tryAttack` | ⭐⭐ |
+| Zombie aveugle | Base | Chasse au son, plus rapide qu'un zombie normal ; **10 % de chance** d'infliger un court effet **Darkness** à chaque coup | `GameEventListener`, ciblage sans ligne de vue ; `StatusEffects.DARKNESS` sur `tryAttack` | ⭐⭐ |
 | Lanceur d'améthyste | Distance | Zombie couvert d'améthyste, tire à l'**arbalète d'améthyste** avec des éclats d'améthyste | `CrossbowAttackGoal` / `CrossbowUser` + projectile `AmethystShardEntity` (partagé avec l'item joueur) | ⭐⭐⭐ |
 | Zombie incrusté | Variantes de minerai | Une entité, plusieurs variantes : **diamant** (très résistant), **redstone** (faisceau électrique), **lapis** (vole de l'XP à chaque coup), **or** (rapide, vole et fuit) | Variante stockée en `DataTracker` + NBT ; le renderer choisit la texture selon la variante | ⭐⭐⭐ |
 | ↳ variante redstone | Distance courte | **Faisceau de redstone** façon « Kamé Hamé Ha » : portée **~4 blocs**, dure **2 s**, **dégâts en continu** | Raycast chaque tick pendant 40 ticks, dégâts par tick aux entités touchées, particules de poussière de redstone ; temps de recharge à définir | ⭐⭐⭐ |
@@ -167,13 +167,17 @@ Objectif de design : c'est la faction **la plus puissante**. L'exploration des p
 | Éteigneur | Contrôle | Variante des profondeurs du **voleur de torche** (faction vanilla) : éteint les torches autour de lui | Recherche de blocs de lumière proches + suppression (respecter `mobGriefing`) | ⭐⭐ |
 | Prophète du Sculk | **Chef (pas un boss)** | Voir détail ci-dessous | Logique de chef commune (général, chaman) | ⭐⭐⭐⭐ |
 
-**Zombie aveugle** (implémenté, `BlindedZombieEntity`, id `blinded_zombie`, nom EN « The Blinded ») :
-- **Spawn** : Deep Dark uniquement (`AbyssSpawns`), Y ≤ -8, poids 10, groupes de 2 à 4. Aucun bébé (`setBaby` neutralisé).
+**Zombie aveugle** (implémenté, `BlindedZombieEntity`, id `blinded_zombie`, nom EN « The Blinded », assets `the_blinded.*`) :
+- **Spawn** : origine Deep Dark (poids 20), mais présent **dans tout l'Overworld sous Y -8** (poids 4, rare), comme l'Enderman. Groupes de 2 à 3. Seuls les biomes ayant déjà des monstres reçoivent l'entrée (biome champignon exclu, biomes de mods respectés). Aucun bébé (`setBaby` neutralisé).
+- **Plafond de densité** : pas de spawn naturel s'il y a déjà 5 aveugles à moins de 24 blocs (`MAX_NEARBY`, `DENSITY_RADIUS`). Le plafond de monstres vanilla est partagé entre espèces et ne limiterait rien dans le Deep Dark, où ils sont seuls.
 - **Stats** : 14 PV, vitesse ×1,15 (0,23 → 0,2645), portée d'écoute **12 blocs** (`getListeningRange()`, point d'accroche de l'effet Ouïe aiguisée).
-- **Ciblage** : aucun `ActiveTargetGoal`. Il écoute les mêmes événements que le Warden (tag `warden_can_listen`) via `Vibrations`. Un bruit de joueur/villageois/golem le cible 100 ticks ; un projectile qui atterrit ne désigne *pas* son lanceur et l'attire seulement vers l'impact (`InvestigateVibrationGoal`). Il ignore les autres zombies. Accroupi = pas de vibration de pas = indétectable.
+- **Écoute** : aucun `ActiveTargetGoal`. Mêmes événements que le Warden (tag `warden_can_listen`) via `Vibrations`, mais **seul le joueur** est entendu : ses pas, sa monture, ses projectiles et les objets qu'il lâche (même logique que le Sculk Shrieker). Un projectile ou un objet désigne un lieu, pas une cible : il attire vers l'impact sans cibler le lanceur (`InvestigateVibrationGoal`), puis il cherche sur place (`SearchGoal`). Accroupi = pas de vibration de pas = indétectable.
+- **Alliés** : ne cible **jamais** un `ZombieEntity` (sa faction, zombies vanilla, husks, noyés) via `canTarget`, sauf cible portant l'effet Provocation (`isProvoked`, à brancher quand l'effet existera).
 - **Mort discrète** : un coup d'un joueur accroupi supprime les événements `ENTITY_DAMAGE` / `ENTITY_DIE`, donc les autres aveugles n'entendent rien.
+- **Les shriekers** : il ne les active pas (vanilla : un shrieker n'accepte que les vibrations d'un joueur).
 - **Darkness** : 10 % par coup, 100 ticks (durée à valider).
-- **Rendu** : provisoire (zombie vanilla) en attendant le bbmodel.
+- **Animations** (état synchronisé par `DataTracker` `BEHAVIOR`) : `idle`, `walk` (errance), `walk_grope` (en route vers un bruit), `run` (poursuite) / `run_frenzy` (poursuite avec ≤ 50 % de vie), `attack_slam` / `attack_grab_bite` / `attack_swipe` (au hasard à chaque attaque), `search_sniff` / `search_listen` / `search_ground` (au hasard, 3 à 5 s, à l'arrivée sur un bruit). Les trois animations de recherche sont bouclées : ce sont des états.
+- **Texture** : `textures/entity/the_blinded.png` à fournir.
 
 **Prophète du Sculk** : zombie couvert de sculk avec un catalyseur dans la poitrine. Pas de barre de boss, reste en retrait et fuit le joueur.
 - Donne aux **zombies aveugles** proches un effet personnalisé **Ouïe aiguisée** qui augmente la portée de leur écoute.
@@ -186,7 +190,6 @@ Objectif de design : c'est la faction **la plus puissante**. L'exploration des p
 - Zombies du Deep Dark : chair putréfiée + **fragments d'écho**.
 - Lanceur d'améthyste : chair putréfiée + **éclats d'améthyste** + faible chance de lâcher son **arbalète d'améthyste**.
 - Mineur des profondeurs : chair putréfiée + **1 % de chance pour chacun** des 5 localisateurs de minerai.
-  **À trancher** : la ligne du zombie aveugle dit « déclenche les sculk shriekers », alors que l'intention exprimée en conversation était qu'ils ne les actionnent **pas**. Vanilla : un shrieker n'accepte que des vibrations d'un joueur (ou d'un projectile/objet lancé par un joueur), donc un zombie ne peut ni le déclencher ni invoquer de Warden. L'implémentation actuelle suit le vanilla (pas de shriek). Les faire shrieker demanderait un mixin sur `SculkShriekerBlockEntity`.
   **À définir** : durée exacte du Darkness du zombie aveugle ; temps de recharge des salves du Prophète et du faisceau de redstone ; taux de drop des fragments d'écho et de l'arbalète ; si les tirs du lanceur d'améthyste appliquent Surbrillance et Provocation au joueur ; « pression des profondeurs » (bonus de stats selon le Y) à valider.
 
 ### Faction du zombie vanilla (nom à définir)
