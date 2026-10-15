@@ -72,7 +72,8 @@ public class BlindedZombieEntity extends ZombieEntity implements Vibrations, Geo
 	public static final int BASE_LISTENING_RANGE = 12;
 
 	/** 15 % plus rapide que le zombie vanilla (0,23). */
-	private static final double MOVEMENT_SPEED = 0.23 * 1.15;
+	private static final double SPEED_BONUS = 1.15;
+	private static final double MOVEMENT_SPEED = 0.23 * SPEED_BONUS;
 	private static final double MAX_HEALTH = 20.0;
 
 	private static final float DARKNESS_CHANCE = 0.10f;
@@ -436,13 +437,30 @@ public class BlindedZombieEntity extends ZombieEntity implements Vibrations, Geo
 
 	@Override
 	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-		controllers.add(new AnimationController<>(this, "movement", 5, this::movementPredicate));
+		controllers.add(new AnimationController<>(this, "movement", 5, this::movementPredicate)
+			.setAnimationSpeedHandler(BlindedZombieEntity::getLocomotionAnimationSpeed));
 
 		// Ne joue rien seul : démarre sur triggerAnim("attack", "<variante>").
 		controllers.add(new AnimationController<>(this, ATTACK_CONTROLLER, 0, state -> PlayState.STOP)
 			.triggerableAnim("slam", RawAnimation.begin().thenPlay("animation.the_blinded.attack_slam"))
 			.triggerableAnim("grab_bite", RawAnimation.begin().thenPlay("animation.the_blinded.attack_grab_bite"))
 			.triggerableAnim("swipe", RawAnimation.begin().thenPlay("animation.the_blinded.attack_swipe")));
+	}
+
+	/**
+	 * Vitesse de lecture de l'animation de marche. Les animations sont chronométrées (2 s le cycle),
+	 * pas liées à la distance parcourue : un zombie 15 % plus rapide que le vanilla « glisse » donc
+	 * si on les lit à vitesse normale. On les accélère du même facteur que son déplacement.
+	 *
+	 * Seules les marches (errance et enquête) sont concernées : la course (run, run_frenzy), l'idle et
+	 * les recherches gardent leur durée d'origine.
+	 */
+	private double getLocomotionAnimationSpeed() {
+		if (!limbAnimator.isLimbMoving()) {
+			return 1.0;
+		}
+		int behavior = getDataTracker().get(BEHAVIOR);
+		return behavior == BEHAVIOR_IDLE || behavior == BEHAVIOR_INVESTIGATING ? SPEED_BONUS : 1.0;
 	}
 
 	private PlayState movementPredicate(AnimationState<BlindedZombieEntity> state) {
