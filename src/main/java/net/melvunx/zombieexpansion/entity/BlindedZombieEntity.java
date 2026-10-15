@@ -258,7 +258,7 @@ public class BlindedZombieEntity extends ZombieEntity implements Vibrations, Geo
 	}
 
 	/**
-	 * Les membres de sa faction (tag abyss_faction) et les zombies vanilla (tag vanilla_zombie_faction)
+	 * Les membres de sa faction (tag abyss_faction) et les Déterrés, zombies vanilla compris (tag unearthed_faction)
 	 * ne sont jamais des cibles, sauf s'ils portent l'effet Provocation. Les relations avec les autres
 	 * factions viendront du système de relations en JSON : tant qu'il n'existe pas, on ne les cible pas
 	 * non plus par défaut, puisque seuls le joueur et ceux qui le frappent le sont.
@@ -266,7 +266,7 @@ public class BlindedZombieEntity extends ZombieEntity implements Vibrations, Geo
 	@Override
 	public boolean canTarget(LivingEntity target) {
 		boolean protectedFromBlinded = target.getType().isIn(ModEntityTypeTags.ABYSS_FACTION)
-			|| target.getType().isIn(ModEntityTypeTags.VANILLA_ZOMBIE_FACTION);
+			|| target.getType().isIn(ModEntityTypeTags.UNEARTHED_FACTION);
 		if (protectedFromBlinded && !isProvoked(target)) {
 			return false;
 		}

@@ -24,7 +24,7 @@ public class ModFrenchLangProvider extends FabricLanguageProvider {
 		builder.add("command.zombie_expansion.biome.title", "Biome : %s (%s), température %s");
 		builder.add("faction.zombie_expansion.frost", "Givre");
 		builder.add("faction.zombie_expansion.abyss", "Abysses");
-		builder.add("faction.zombie_expansion.vanilla", "Zombies vanilla");
+		builder.add("faction.zombie_expansion.unearthed", "Les Déterrés");
 		builder.add("command.zombie_expansion.faction.title", "Faction ici : %s");
 		builder.add("command.zombie_expansion.faction.member", "  - %s");
 		builder.add("command.zombie_expansion.faction.empty", "  Aucun membre enregistré");

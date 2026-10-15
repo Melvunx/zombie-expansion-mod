@@ -28,7 +28,7 @@ public class ModEntityTypeTagProvider extends FabricTagProvider.EntityTypeTagPro
 		// Une faction = un tag. Les futurs membres s'ajoutent ici (ou dans un datapack).
 		getOrCreateTagBuilder(ModEntityTypeTags.FROST_FACTION).add(ModEntities.FROZEN_ZOMBIE);
 		getOrCreateTagBuilder(ModEntityTypeTags.ABYSS_FACTION).add(ModEntities.BLINDED_ZOMBIE);
-		getOrCreateTagBuilder(ModEntityTypeTags.VANILLA_ZOMBIE_FACTION)
+		getOrCreateTagBuilder(ModEntityTypeTags.UNEARTHED_FACTION)
 			.add(EntityType.ZOMBIE)
 			.add(EntityType.ZOMBIE_VILLAGER)
 			.add(EntityType.HUSK)

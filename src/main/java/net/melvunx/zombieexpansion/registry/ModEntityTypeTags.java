@@ -12,8 +12,8 @@ import net.minecraft.registry.tag.TagKey;
 public final class ModEntityTypeTags {
 	public static final TagKey<EntityType<?>> FROST_FACTION = of("frost_faction");
 	public static final TagKey<EntityType<?>> ABYSS_FACTION = of("abyss_faction");
-	/** Nom provisoire : la faction des zombies vanilla n'a pas encore de nom (voir CLAUDE.md). */
-	public static final TagKey<EntityType<?>> VANILLA_ZOMBIE_FACTION = of("vanilla_zombie_faction");
+	/** Les Déterrés (The Unearthed) : la faction des zombies « classiques », première que le joueur rencontre. */
+	public static final TagKey<EntityType<?>> UNEARTHED_FACTION = of("unearthed_faction");
 
 	private ModEntityTypeTags() {
 	}

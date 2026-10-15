@@ -25,7 +25,8 @@ import net.minecraft.world.biome.Biome;
 public enum Faction {
 	FROST("frost", ModEntityTypeTags.FROST_FACTION),
 	ABYSS("abyss", ModEntityTypeTags.ABYSS_FACTION),
-	VANILLA("vanilla", ModEntityTypeTags.VANILLA_ZOMBIE_FACTION);
+	/** Les Déterrés (The Unearthed) : zombies classiques, early game. Faction par défaut partout ailleurs. */
+	UNEARTHED("unearthed", ModEntityTypeTags.UNEARTHED_FACTION);
 
 	/** Altitude maximale du territoire des Abysses : en dessous, c'est leur zone quel que soit le biome. */
 	public static final int ABYSS_MAX_Y = -8;
@@ -71,7 +72,7 @@ public enum Faction {
 
 	/**
 	 * La faction dominante à une position : les Abysses sous Y -8 ou dans leur biome d'origine,
-	 * puis le Givre dans ses biomes, sinon les zombies vanilla. L'ordre compte : sous terre le
+	 * puis le Givre dans ses biomes, sinon les Déterrés. L'ordre compte : sous terre le
 	 * zombie gelé n'apparaît pas (il exige le ciel visible), les Abysses l'emportent donc.
 	 */
 	public static Faction at(World world, BlockPos pos) {
@@ -82,6 +83,6 @@ public enum Faction {
 		if (biome.isIn(ModBiomeTags.FROST_FACTION_SPAWNS) || biome.isIn(ModBiomeTags.FROST_FACTION_MIXED_SPAWNS)) {
 			return FROST;
 		}
-		return VANILLA;
+		return UNEARTHED;
 	}
 }
