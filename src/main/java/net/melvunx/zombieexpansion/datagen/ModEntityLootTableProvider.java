@@ -11,6 +11,7 @@ import net.minecraft.loot.LootPool;
 import net.minecraft.loot.LootTable;
 import net.minecraft.loot.context.LootContextTypes;
 import net.minecraft.loot.entry.ItemEntry;
+import net.minecraft.loot.condition.KilledByPlayerLootCondition;
 import net.minecraft.loot.function.SetCountLootFunction;
 import net.minecraft.loot.provider.number.ConstantLootNumberProvider;
 import net.minecraft.loot.provider.number.UniformLootNumberProvider;
@@ -36,7 +37,8 @@ public class ModEntityLootTableProvider extends SimpleFabricLootTableProvider {
 				.with(ItemEntry.builder(Items.SNOWBALL)
 					.apply(SetCountLootFunction.builder(UniformLootNumberProvider.create(0, 3))))));
 
-		// Zombie aveugle : chair putréfiée + 0 à 2 fragments d'écho (moyenne 1 par mort).
+		// Zombie aveugle : chair putréfiée + 0 à 2 fragments d'écho (moyenne 1 par mort), ces derniers
+		// seulement si le joueur porte le coup mortel : c'est une récompense, pas un farm à la lave.
 		exporter.accept(ModEntities.BLINDED_ZOMBIE.getLootTableId(), LootTable.builder()
 			.pool(LootPool.builder()
 				.rolls(ConstantLootNumberProvider.create(1))
@@ -44,6 +46,7 @@ public class ModEntityLootTableProvider extends SimpleFabricLootTableProvider {
 					.apply(SetCountLootFunction.builder(UniformLootNumberProvider.create(0, 2)))))
 			.pool(LootPool.builder()
 				.rolls(ConstantLootNumberProvider.create(1))
+				.conditionally(KilledByPlayerLootCondition.builder())
 				.with(ItemEntry.builder(Items.ECHO_SHARD)
 					.apply(SetCountLootFunction.builder(UniformLootNumberProvider.create(0, 2))))));
 	}
