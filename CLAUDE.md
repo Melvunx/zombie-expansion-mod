@@ -249,8 +249,8 @@ Membres actuels : zombie vanilla et zombie villageois (tag `unearthed_faction`, 
 
 **Zombie lanceur** (implémenté, `ThrowerZombieEntity`, id `thrower_zombie`, nom EN « Thrower Zombie », FR « Zombie lanceur ») :
 - **Stats** : celles du zombie vanilla (`createZombieAttributes`), aucun bébé. Il garde la mêlée vanilla ; seul un goal de tir s'ajoute.
-- **Tir** (`ThrowArmGoal`, priorité 1) : cible visible entre **3 et 12 blocs** et bras présent → il s'immobilise **0,75 s** (visée, le joueur peut réagir), puis lance son bras. Trop près, il frappe : coller le lanceur l'empêche de tirer. Imprécision de 6° (early game).
-- **Bras** : une fois lancé, le bras droit disparaît du modèle (`DataTracker` `ARM_THROWN`, lu par `ThrowerZombieModel`) et **repousse après 5 s** (100 ticks, persisté en NBT `ArmRegrowTicks`). Pas d'item à ramasser.
+- **Tir** (`ThrowArmGoal`, priorité 1) : cible visible entre **5 et 12 blocs** et bras présent (ni lancé, ni en repousse) → il s'immobilise **0,75 s** (visée, le joueur peut réagir), puis lance son bras. **À moins de 5 blocs** (`MELEE_RANGE`) il se bat au corps à corps, et si le joueur se rapproche pendant la visée le tir est annulé ; au-delà de 5 blocs il retire de loin. Imprécision de 6° (early game). Piste si trop facile à coller : lui faire garder ses distances quand il est armé.
+- **Bras** : une fois lancé, le bras droit disparaît du modèle (`DataTracker` `ARM_THROWN`, lu par `ThrowerZombieModel`) et repousse ainsi : un décompte de **4 s** (`ARM_REGROW_DELAY_TICKS`, persisté en NBT `ArmRegrowTicks`) qui **ne tourne que si la cible n'est pas à moins de 5 blocs** (collé au joueur, il n'a pas le temps de repousser), puis l'animation de repousse (1,2 s ou 0,7 s, au hasard) pendant laquelle le bras est de nouveau visible mais inutilisable ; ensuite il peut tirer. Pas d'item à ramasser.
 - **Projectile** (`ThrownArmEntity`, dérive de `ThrownItemEntity`) : **2 PV** d'impact + effet **Englué 3 s**. Il traverse les membres des Déterrés. Éclaboussure de bave à l'impact.
 - **Effet Englué** (`GluedStatusEffect`, `ModStatusEffects.GLUED`) : **-30 % de vitesse** (Lenteur I vanilla : -15 %), retiré par le lait. Overlay de bave verte côté client (`client/GluedOverlay`, `HudRenderCallback`, texture `textures/misc/glued_overlay.png` générée par script), qui s'estompe sur la dernière seconde.
 - **Rendu GeckoLib** (modèles, animations et textures faits dans Blockbench, version simple sans moignon) :
@@ -259,10 +259,16 @@ Membres actuels : zombie vanilla et zombie villageois (tag `unearthed_faction`, 
   - **Lâcher synchronisé** : `throwArm` lance l'animation, mais le projectile part et le bras disparaît **2 ticks plus tard** (`THROW_RELEASE_TICKS`, ≈ 0,12 s), au moment où la main le lâche. Le goal ne relance rien pendant ce délai (`isThrowing`).
   - `textures/entity/thrower_zombie.png` (64×64, disposition « legacy » : jambe et bras gauches = UV droits en miroir, donc ils partagent la même bave).
   - Projectile : `ThrownArmEntity` est un `GeoEntity` (base `ThrownItemEntity` conservée pour la physique et le réseau), rendu par `ThrownArmRenderer` avec `geo/entity/thrown_arm.geo.json`, `animations/entity/thrown_arm.animation.json` (`spin`, 0,4 s bouclée) et `textures/entity/thrown_arm.png` (16×16). GeckoLib n'oriente que les créatures : le renderer lui donne le lacet interpolé du projectile (le tangage est inutile, le spin est autour de X).
-  - **Limites** : pas de calque d'armure ni d'objet tenu (os incompatibles avec les calques GeckoLib), pas d'animation de mêlée dédiée ; sons à faire.
+  - **Limites** : pas de calque d'armure ni d'objet tenu (réglé en interdisant au lanceur de ramasser des objets), sons à faire.
+  - **Animations de mêlée et de repousse** (branchées ; chacune jouée une fois par `triggerAnim` sur son contrôleur, la variante est tirée au hasard) :
+    - Mêlée à **deux bras** (bras droit présent) : `attack_both` (0,6 s, coup à 0,3 s) ou `attack_both_alt` (0,7 s, tenaille, coup à 0,4 s).
+    - Mêlée à **un bras** (bras lancé ou en repousse) : `attack_single` (0,5 s, coup à 0,25 s) ou `attack_single_alt` (0,6 s, revers latéral, coup à 0,3 s).
+    - **Repousse** : `regrow` (1,2 s) ou `regrow_burst` (0,7 s, « super régénération »). Elles animent l'échelle de `right_arm` de 0,01 à 1 : `ARM_THROWN` repasse donc à faux **au début** de l'animation. Le goal ne tire pas avant sa fin (`isRegrowing`, 24 ou 14 ticks).
+    - L'animation d'attaque démarre quand `tryAttack` est appelé, alors que les dégâts sont infligés tout de suite : le « coup » visuel (0,25 à 0,4 s) arrive après les dégâts. À ajuster si ça gêne.
   - **Plus tard** : version avec moignon (couper `right_arm` en deux os, `right_arm_lower` masqué seul) et animation `regrow`.
 - **Spawn** : règle commune `Faction.allowsUnearthedSpawn` (surface et grottes, Y > -8, sous terre uniquement dans les biomes du Givre, jamais dans le Deep Dark). Entrée de spawn ajoutée par `UnearthedSpawns` (part de 8 %, groupes de 1 à 2).
 - **Loot** : chair putréfiée 0-2.
+- **Pas d'objets ni d'équipement** : `canGather` renvoie faux, pas d'équipement initial, citrouille d'Halloween retirée. Le modèle n'affiche ni armure ni objet tenu ; cela règle la limite correspondante.
 
 #### Stats des exceptions
 
