@@ -21,6 +21,8 @@ public class ZombieExpansionClient implements ClientModInitializer {
 		EntityRendererRegistry.register(ModEntities.FROZEN_ZOMBIE, FrozenZombieRenderer::new);
 		EntityRendererRegistry.register(ModEntities.BLINDED_ZOMBIE, BlindedZombieRenderer::new);
 		EntityRendererRegistry.register(ModEntities.THROWER_ZOMBIE, ThrowerZombieRenderer::new);
+		GluedOverlay.register();
+
 		// Projectile rendu comme un objet en vol (sprite de chair putréfiée, en attendant un modèle dédié).
 		EntityRendererRegistry.register(ModEntities.THROWN_ARM, FlyingItemEntityRenderer::new);
 	}
