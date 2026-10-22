@@ -14,24 +14,36 @@ import net.minecraft.particle.ParticleTypes;
 import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.world.World;
+import software.bernie.geckolib.animatable.GeoEntity;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animation.Animation;
+import software.bernie.geckolib.animation.AnimatableManager;
+import software.bernie.geckolib.animation.AnimationController;
+import software.bernie.geckolib.animation.PlayState;
+import software.bernie.geckolib.animation.RawAnimation;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 /**
  * Le bras lancé par le zombie lanceur.
  *
  * Hérite de {@link ThrownItemEntity} (comme la boule de neige ou l'œuf) : on récupère gratuitement
  * la physique (gravité, collision), la synchronisation client et le rendu « objet en vol ».
- * Provisoirement, le bras s'affiche comme de la chair putréfiée ; un modèle dédié viendra plus tard.
+ * Implémente {@link GeoEntity} : le bras est un modèle GeckoLib (thrown_arm.*) qui tournoie en vol.
  *
  * Au contact d'une créature : un peu de dégâts, puis l'effet {@link ModStatusEffects#GLUED}.
  * Il traverse les membres de la faction Les Déterrés (pas de tir ami).
  */
-public class ThrownArmEntity extends ThrownItemEntity {
+public class ThrownArmEntity extends ThrownItemEntity implements GeoEntity {
 	/** Dégâts d'impact : 2 PV (1 cœur), sous la mêlée du zombie vanilla. À ajuster en jeu. */
 	private static final float DAMAGE = 2.0f;
 	/** Durée de l'effet Englué : 3 secondes. */
 	private static final int GLUED_TICKS = 60;
 	/** Code d'événement « le projectile éclate » : lu par handleStatus côté client. */
 	private static final byte STATUS_SPLAT = 3;
+
+	private static final RawAnimation SPIN = RawAnimation.begin().thenLoop("animation.thrown_arm.spin");
+
+	private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
 
 	public ThrownArmEntity(EntityType<? extends ThrownArmEntity> entityType, World world) {
 		super(entityType, world);
@@ -41,6 +53,17 @@ public class ThrownArmEntity extends ThrownItemEntity {
 		super(ModEntities.THROWN_ARM, owner, world);
 	}
 
+	@Override
+	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+		controllers.add(new AnimationController<>(this, "spin", 0, state -> state.setAndContinue(SPIN)));
+	}
+
+	@Override
+	public AnimatableInstanceCache getAnimatableInstanceCache() {
+		return geoCache;
+	}
+
+	/** L'entité garde la base ThrownItemEntity (physique, réseau) ; son « objet » n'est plus dessiné. */
 	@Override
 	protected Item getDefaultItem() {
 		return Items.ROTTEN_FLESH;

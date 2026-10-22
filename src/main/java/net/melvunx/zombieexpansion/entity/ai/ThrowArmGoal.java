@@ -32,7 +32,7 @@ public class ThrowArmGoal extends Goal {
 	@Override
 	public boolean canStart() {
 		LivingEntity target = mob.getTarget();
-		if (target == null || !target.isAlive() || mob.isArmThrown()) {
+		if (target == null || !target.isAlive() || mob.isArmThrown() || mob.isThrowing()) {
 			return false;
 		}
 		double distanceSq = mob.squaredDistanceTo(target);
@@ -42,13 +42,19 @@ public class ThrowArmGoal extends Goal {
 	@Override
 	public boolean shouldContinue() {
 		LivingEntity target = mob.getTarget();
-		return target != null && target.isAlive() && !mob.isArmThrown() && mob.canSee(target);
+		return target != null && target.isAlive() && !mob.isArmThrown() && !mob.isThrowing() && mob.canSee(target);
 	}
 
 	@Override
 	public void start() {
 		windup = WINDUP_TICKS;
 		mob.getNavigation().stop();
+		mob.setAiming(true);
+	}
+
+	@Override
+	public void stop() {
+		mob.setAiming(false);
 	}
 
 	@Override
