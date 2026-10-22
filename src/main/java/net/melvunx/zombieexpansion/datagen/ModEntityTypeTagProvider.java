@@ -30,8 +30,6 @@ public class ModEntityTypeTagProvider extends FabricTagProvider.EntityTypeTagPro
 		getOrCreateTagBuilder(ModEntityTypeTags.ABYSS_FACTION).add(ModEntities.BLINDED_ZOMBIE);
 		getOrCreateTagBuilder(ModEntityTypeTags.UNEARTHED_FACTION)
 			.add(EntityType.ZOMBIE)
-			.add(EntityType.ZOMBIE_VILLAGER)
-			.add(EntityType.HUSK)
-			.add(EntityType.DROWNED);
+			.add(EntityType.ZOMBIE_VILLAGER);
 	}
 }
