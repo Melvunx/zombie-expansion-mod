@@ -29,6 +29,7 @@
   "command.zombie_expansion.nearby.entry": "  %s: %s",
   "command.zombie_expansion.nearby.none": "  none",
   "command.zombie_expansion.nearby.title": "Faction members within %s blocks:",
+  "effect.zombie_expansion.glued": "Glued",
   "entity.zombie_expansion.blinded_zombie": "The Blinded",
   "entity.zombie_expansion.frozen_zombie": "Frozen Zombie",
   "faction.zombie_expansion.abyss": "Abyss",

@@ -19,6 +19,7 @@ public class ModEnglishLangProvider extends FabricLanguageProvider {
 		builder.add(ModEntities.FROZEN_ZOMBIE, "Frozen Zombie");
 		builder.add(ModEntities.BLINDED_ZOMBIE, "The Blinded");
 		builder.add(ModItems.BLINDED_ZOMBIE_SPAWN_EGG, "The Blinded Spawn Egg");
+		builder.add("effect.zombie_expansion.glued", "Glued");
 		builder.add(ModItems.FROZEN_ZOMBIE_SPAWN_EGG, "Frozen Zombie Spawn Egg");
 
 		builder.add("command.zombie_expansion.biome.title", "Biome: %s (%s), temperature %s");
