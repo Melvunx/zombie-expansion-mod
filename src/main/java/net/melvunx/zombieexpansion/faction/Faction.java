@@ -13,6 +13,7 @@ import net.minecraft.registry.tag.TagKey;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldView;
 import net.minecraft.world.biome.Biome;
 
 /**
@@ -84,5 +85,22 @@ public enum Faction {
 			return FROST;
 		}
 		return UNEARTHED;
+	}
+
+	/**
+	 * Règle de spawn naturel commune aux membres des Déterrés : surface et grottes, jusqu'à Y -8
+	 * (en dessous, ce sont les Abysses). Exception : dans les biomes du Givre, la surface appartient
+	 * au zombie gelé, les Déterrés n'y apparaissent que sous terre (ciel non visible).
+	 */
+	public static boolean allowsUnearthedSpawn(WorldView world, BlockPos pos) {
+		if (pos.getY() <= ABYSS_MAX_Y) {
+			return false;
+		}
+		RegistryEntry<Biome> biome = world.getBiome(pos);
+		if (biome.isIn(ModBiomeTags.ABYSS_FACTION_SPAWNS)) {
+			return false;
+		}
+		boolean frostBiome = biome.isIn(ModBiomeTags.FROST_FACTION_SPAWNS) || biome.isIn(ModBiomeTags.FROST_FACTION_MIXED_SPAWNS);
+		return !frostBiome || !world.isSkyVisible(pos);
 	}
 }
