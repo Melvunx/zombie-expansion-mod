@@ -53,11 +53,11 @@ Toutes les commandes passent par le wrapper Gradle (`./gradlew`, ou `gradlew.bat
 - Point d'entrée : `ZombieExpansionDataGenerator` (`fabric-datagen`), qui enregistre les providers dans `onInitializeDataGenerator`.
 - Commande : `./gradlew runDatagen`. Les fichiers sont générés dans `src/main/generated/` : **ne jamais les modifier à la main**, modifier le provider puis relancer la datagen.
 - Tout ce qui peut être généré passe par un provider plutôt que par du JSON écrit à la main :
-    - traductions : `FabricLanguageProvider` (un pour `en_us`, un pour `fr_fr`)
-    - modèles d'items (œufs d'apparition, objets) : `FabricModelProvider`
-    - loot tables des zombies : `SimpleFabricLootTableProvider` avec `LootContextTypes.ENTITY`
-    - tags d'entités (régions, factions) : `FabricTagProvider.EntityTypeTagProvider`
-    - recettes : `FabricRecipeProvider`
+  - traductions : `FabricLanguageProvider` (un pour `en_us`, un pour `fr_fr`)
+  - modèles d'items (œufs d'apparition, objets) : `FabricModelProvider`
+  - loot tables des zombies : `SimpleFabricLootTableProvider` avec `LootContextTypes.ENTITY`
+  - tags d'entités (régions, factions) : `FabricTagProvider.EntityTypeTagProvider`
+  - recettes : `FabricRecipeProvider`
 - Référencer un tag **vanilla** depuis un `FabricTagProvider` demande `forceAddTag` (pas `addTag`), sinon la datagen échoue avec « missing following references ».
 - Restent écrits à la main dans `src/main/resources` : textures, sons (`sounds.json`), `fabric.mod.json`, `zombie_expansion.mixins.json`. Les factions JSON pourront être générées plus tard par un `DataProvider` personnalisé.
 - Après une modification de provider : relancer `runDatagen` **avant** `runClient`.
@@ -70,7 +70,8 @@ src/main/java/net/melvunx/zombieexpansion/
   ZombieExpansionDataGenerator.java  # point d'entrée de la datagen
   datagen/                    # providers (langues, modèles, loot, tags, recettes)
   entity/                     # classes des zombies et projectiles
-  entity/ai/                  # goals personnalisés (InvestigateVibrationGoal, SearchGoal)
+  entity/ai/                  # goals personnalisés (InvestigateVibrationGoal, SearchGoal, ThrowArmGoal)
+  effect/                     # effets de statut (GluedStatusEffect), enregistrés dans registry/ModStatusEffects
   faction/                    # Faction (enum liée à un tag d'entités), FrostVulnerability ; relations à venir en JSON
   event/                      # hordes, raids de factions (PersistentState)
   registry/                   # ModEntities, ModItems, ModSounds...
@@ -107,8 +108,8 @@ src/main/generated/           # produit par runDatagen, ne pas éditer
 | Zombie gelé | Biomes enneigés | Coups qui gèlent | `frozenTicks`, attributs | ⭐ |
 | Zombie aveugle (*The Blinded*) | Deep Dark (cœur), puis tout l'Overworld sous Y -8 (comme l'Enderman) | Chasse au bruit, plus rapide | `GameEventListener` (vibrations comme le Warden), ciblage sans ligne de vue ; accroupi = indétectable | ⭐⭐ |
 | Zombie caméléon | Jungle | Se fond dans le décor | V1 : texture camouflée + immobilité ; V2 : renderer teinté `BiomeColors` / transparence | ⭐⭐⭐ |
-| Zombie lanceur | Faction Les Déterrés (partie « facile » du mod) | Lance ses membres | Entité projectile + `DataTracker` pour masquer le bras sur le modèle | ⭐⭐⭐ |
-| Zombie général | Toutes régions | Renforce la horde selon le nombre | Comptage périodique des alliés proches + modificateurs d'attributs ; goal « suivre le leader » ; sa mort fait perdre les bonus | ⭐⭐⭐ |
+| Zombie lanceur | Faction Les Déterrés (partie « facile » du mod) : surface et grottes | Lance ses membres, effet Englué (Lenteur 3 s + bave verte) | Entité projectile + `DataTracker` pour masquer le bras sur le modèle | ⭐⭐⭐ |
+| Chef de horde (le « général » des Déterrés) | Surface uniquement, hors biomes du Givre | Mène des sous-fifres et donne de légers bonus aux autres Déterrés proches, par impulsions avec temps de recharge | Comptage périodique des alliés proches + modificateurs d'attributs temporaires ; goal « suivre le leader » ; sa mort fait perdre les bonus ; ses sous-fifres sont exclus des bonus. Chaque faction aura son propre chef (chaman, prophète) | ⭐⭐⭐ |
 | Zombie marchand pacifiste | Villages | Vend les items du mod, protège son maître | Interface `Merchant` ; ne pas hériter de `Monster` (pour l'Iron Golem) ; maître stocké par UUID ; goal de défense | ⭐⭐⭐⭐ |
 | Hostilité régionale | — | Les zombies attaquent ceux d'autres régions | Tags d'entité par région + `ActiveTargetGoal` avec prédicat | ⭐⭐ |
 | Factions | — | Alliances et guerres entre factions | Relations alliés/ennemis en JSON datapack, extensible aux autres mobs | ⭐⭐⭐ |
@@ -211,17 +212,105 @@ Faction des zombies « classiques », **la première que le joueur découvre**. 
 **Charte de la faction** (ce qui doit rester vrai pour tout futur membre) :
 - **Early game** : pas trop fort, mais différent du zombie vanilla. Les Déterrés sont l'apprentissage du mod : pas de mécanique qui demande déjà une contre-mesure spécialisée (pas d'effet lourd, pas de gimmick de la partie « difficile »).
 - **Budget de puissance** : au plus 20 PV et des dégâts de mêlée au plus égaux à ceux du zombie vanilla. Un membre peut être plus faible ou plus gênant, pas plus fort.
-- **Spawn** : en priorité **dans les grottes au-dessus de Y -8** (ciel non visible), c'est-à-dire en complément exact de la zone des Abysses qui commence à Y -8. En dessous, ce sont les Abysses (et le zombie aveugle, 20 % des zombies).
+- **Exceptions validées** au budget (les seules), voir « Stats des exceptions » ci-dessous : le **Gonflé** (stats, dégâts et Nausée), le **Chef de horde** (stats et dégâts), le **Zombie bûcheron** (dégâts, à cause de la hache) et le **Sous-fifre sauvage** (dégâts, à cause de l'épée). Toute nouvelle exception doit être validée explicitement.
+- **Spawn** : **à la surface et dans les grottes jusqu'à Y -8**, sans priorité entre les deux (une seule exception : le Chef de horde, surface uniquement). En dessous de Y -8, ce sont les Abysses (et le zombie aveugle, 20 % des zombies).
 - **Rareté** : poids bas par rapport au zombie vanilla du biome, comme les variantes du Givre : le zombie vanilla reste la référence.
 - **Alliés** : le zombie aveugle ne les cible jamais (sauf Provocation).
 
-Membres actuels : zombie vanilla, zombie villageois, husk, noyé (tag `unearthed_faction`, tels que le jeu les fournit). Membres prévus :
-- **Mineur zombie** classique : creuse vers le joueur et lâche du minerai (sa variante des profondeurs, plus rapide, est dans les Abysses). Respecter `mobGriefing`.
-- **Voleur de torche** (alias zombie porte-torche) : éteint ou vole les torches (sa variante des profondeurs est l'Éteigneur des Abysses)
-- **Zombie de géode** : armure de cristaux qui renvoie des dégâts, à briser à la pioche
-- **Zombie infecteur** : transforme les animaux tués en variantes zombies
-- **Zombie lanceur** : lance ses membres (projectile + bras masqué sur le modèle via `DataTracker`).
-- Liste complète à venir.
+**Frontière avec les Abysses** : la limite est **Y -8**, sans zone neutre. Au-dessus de Y -8 (surface et grottes) : Déterrés ; à Y -8 et en dessous : Abysses. Les combats entre factions se feront donc autour de cette couche.
+
+**Règles de spawn des Déterrés** :
+- **Surface et grottes** jusqu'à Y -8 pour tous les membres, **sauf le Chef de horde : surface uniquement**.
+- **Biomes du Givre** : la surface appartient au zombie gelé (voir Givre). Les Déterrés n'y apparaissent que **dans les grottes sous ces biomes**. Conséquence : le Chef de horde, qui ne spawn qu'en surface, n'apparaît dans aucun biome du Givre.
+- **Plafonnement** : une part cible par membre (de l'ordre de 5 à 10 % de la liste du biome) et un total des Déterrés plafonné (de l'ordre de 35 %), pour que le zombie vanilla reste majoritaire. Chiffres exacts à régler en jeu.
+- **Nouvelles factions** : à chaque ajout d'une faction, **demander** à Melvin si les Déterrés doivent aussi apparaître dans les grottes sous ses biomes de surface. Ne pas le décider seul.
+
+**Principe de design** : chaque membre apprend au joueur **un réflexe de base** de Minecraft (contourner, reculer, tuer de loin, viser le chef, protéger sa base…). Il doit y avoir plusieurs manières de les affronter.
+
+Membres actuels : zombie vanilla et zombie villageois (tag `unearthed_faction`, tels que le jeu les fournit). Le husk et le noyé n'en font **pas** partie.
+
+**Membres validés** :
+
+| Zombie | Rôle | Idée clé | Piste technique | Difficulté |
+|---|---|---|---|---|
+| Zombie lanceur | Distance | Lance ses bras ; le joueur touché reçoit l'effet **Englué** (Lenteur **3 s** + bave verte à l'écran) | Projectile (bras) + `DataTracker` pour masquer le bras lancé sur le modèle ; effet Englué (voir Items prévus) | ⭐⭐⭐ |
+| Zombie archer / arbalétrier | Distance | Une seule entité : spawne **avec un arc ou une arbalète** (au hasard). IA proche du squelette, **fuit si le joueur s'approche** | Arme donnée dans `initialize` (`equipStack`) ; `BowAttackGoal` ou `CrossbowAttackGoal` + `CrossbowUser` ; `FleeEntityGoal` sous ~5 blocs ; moins précis que le squelette (early game) ; pose de bras de tir dans le renderer | ⭐⭐ |
+| Chef de horde | **Chef (pas un boss)** | Le « général » des Déterrés : mène des sous-fifres et donne de légers bonus aux autres Déterrés proches, par impulsions avec temps de recharge. **Surface uniquement** | **Exception au budget** : 30 PV, 3 points d'armure, +0,5 cœur de dégâts par rapport au zombie vanilla. Spawne avec 2 à 4 sous-fifres ; goal « suivre le leader » ; bonus **plus légers que ceux d'un vrai général**, appliqués par impulsions (durée et temps de recharge à régler en jeu), perdus à sa mort ; **les sous-fifres (sauvages ou du joueur) ne reçoivent jamais ces bonus**. Logique de chef commune (chaman, prophète) | ⭐⭐⭐ |
+| Sous-fifre | Mêlée faible | Accompagne le chef : **14 PV**, spawne avec une **épée en bois** (exception sur les dégâts). Sauvage : brûle au soleil ; celui du joueur : non | Voir section « Sous-fifre du joueur » : même entité, hostile tant qu'elle n'a pas de propriétaire | ⭐⭐ (sauvage) |
+| Zombie au bouclier | Mêlée | Bloque les attaques de face. Contre : le contourner, ou une **hache** qui désactive le bouclier (mécanique vanilla) | Bouclier en main secondaire ; blocage géré par la mécanique vanilla `isBlocking` / désactivation par la hache | ⭐⭐ |
+| Coureur | Mêlée | Maigre et rapide, **12 PV**. Oblige à se battre en reculant | Attributs (vitesse plus haute, vie plus basse) | ⭐ |
+| Gonflé | Mêlée / zone | Lent, résistant au recul ; à sa mort, éclate en un nuage de **Nausée I pendant 5 s** pour le joueur touché. Contre : le tuer de loin ou s'écarter | **Exception au budget** : 35 PV, 4 points d'armure, dégâts selon la difficulté (voir ci-dessous) ; `AreaEffectCloud` à la mort (`onDeath`) avec `StatusEffectInstance(NAUSEA, 100, 0)` | ⭐⭐ |
+| Zombie fouisseur | Embuscade | **Sort de terre** (herbe, terre, gravier, pierre de grotte) près du joueur, la nuit et dans les grottes. Zombie emblème des Déterrés | Animation d'émergence GeckoLib (comme le Warden) ; invulnérable et immobile pendant l'émergence ; particules du bloc en dessous | ⭐⭐⭐ |
+| Zombie bûcheron | Siège | Armé d'une hache, **casse les portes en bois quelle que soit la difficulté** (vanilla : Difficile seulement) | `BreakDoorGoal` avec prédicat de difficulté toujours vrai ; respecter `mobGriefing`. **Exception au budget** sur les dégâts (la hache dépasse l'épée) : dégâts fixés par `DifficultyDamage` | ⭐⭐ |
+| Mineur zombie | Creuseur | **Casse des blocs uniquement pour atteindre le joueur**. Il **ne vole pas** : le vol est réservé au mineur des profondeurs (Abysses, plus rapide) | Respecter `mobGriefing` ; loot éventuel à définir | ⭐⭐⭐ |
+| Voleur de torche | Contrôle | Éteint ou vole les torches (sa variante des profondeurs est l'Éteigneur des Abysses) | Recherche de blocs de lumière proches ; respecter `mobGriefing` | ⭐⭐ |
+| Zombie de géode | Mêlée | Armure de cristaux qui renvoie des dégâts, à briser à la pioche | — | ⭐⭐⭐ |
+| Zombie infecteur | Soutien | Transforme les animaux tués en variantes zombies | — | ⭐⭐⭐ |
+
+**Zombie lanceur** (implémenté, `ThrowerZombieEntity`, id `thrower_zombie`, nom EN « Thrower Zombie », FR « Zombie lanceur ») :
+- **Stats** : celles du zombie vanilla (`createZombieAttributes`), aucun bébé. Il garde la mêlée vanilla ; seul un goal de tir s'ajoute.
+- **Tir** (`ThrowArmGoal`, priorité 1) : cible visible entre **3 et 12 blocs** et bras présent → il s'immobilise **0,75 s** (visée, le joueur peut réagir), puis lance son bras. Trop près, il frappe : coller le lanceur l'empêche de tirer. Imprécision de 6° (early game).
+- **Bras** : une fois lancé, le bras droit disparaît du modèle (`DataTracker` `ARM_THROWN`, lu par `ThrowerZombieModel`) et **repousse après 5 s** (100 ticks, persisté en NBT `ArmRegrowTicks`). Pas d'item à ramasser.
+- **Projectile** (`ThrownArmEntity`, dérive de `ThrownItemEntity`) : **2 PV** d'impact + effet **Englué 3 s**. Il traverse les membres des Déterrés. Éclaboussure de bave à l'impact.
+- **Effet Englué** (`GluedStatusEffect`, `ModStatusEffects.GLUED`) : **-30 % de vitesse** (Lenteur I vanilla : -15 %), retiré par le lait. Overlay de bave verte côté client (`client/GluedOverlay`, `HudRenderCallback`, texture `textures/misc/glued_overlay.png` générée par script), qui s'estompe sur la dernière seconde.
+- **Provisoire** : renderer et texture vanilla du zombie (`ThrowerZombieRenderer`, bras droit masqué) et projectile affiché comme de la chair putréfiée. Modèle Blockbench, texture et sons à faire. **Armure** : le calque d'armure masque aussi le bras (même modèle), à vérifier en jeu.
+- **Spawn** : règle commune `Faction.allowsUnearthedSpawn` (surface et grottes, Y > -8, sous terre uniquement dans les biomes du Givre, jamais dans le Deep Dark). **Pas encore d'entrée de spawn par biome** : seul l'œuf (onglet des œufs) et `/summon` le font apparaître, en attendant `UnearthedSpawns`.
+- **Loot** : chair putréfiée 0-2.
+
+#### Stats des exceptions
+
+1 cœur = 2 PV. Le zombie vanilla sert de référence : 20 PV, 2 points d'armure, dégâts finaux contre le joueur de 2,5 / 3 / 4,5 PV (Facile / Normal / Difficile).
+
+| Zombie | PV | Armure | Dégâts Facile | Dégâts Normal | Dégâts Difficile |
+|---|---|---|---|---|---|
+| Zombie vanilla (référence) | 20 | 2 | 2,5 PV (1,25 ❤) | 3 PV (1,5 ❤) | 4,5 PV (2,25 ❤) |
+| **Gonflé** | **35** | **4** | **3 à 4 PV** (1,5 à 2 ❤) | **4 à 5 PV** (2 à 2,5 ❤) | **6 à 8 PV** (3 à 4 ❤) |
+| **Chef de horde** | **30** | **3** | **3,5 PV** (vanilla + 0,5 ❤) | **4 PV** (vanilla + 0,5 ❤) | **5,5 PV** (vanilla + 0,5 ❤) |
+
+**Autres exceptions** (dégâts uniquement, valeurs **à fixer**) :
+
+| Zombie | Pourquoi | Dégâts |
+|---|---|---|
+| **Zombie bûcheron** | La hache fait plus de dégâts qu'une épée | À fixer (proposition : vanilla + 0,5 ❤, comme le chef) |
+| **Sous-fifre sauvage** (14 PV, épée en bois) | L'épée en bois ajoute des dégâts à l'attribut de base | À fixer (proposition : dégâts du zombie vanilla) |
+
+**Nausée du Gonflé** : exception à la règle « pas d'effet lourd », limitée à **Nausée niveau I (amplificateur 0) pendant 5 s**, uniquement pour le joueur touché par le nuage.
+
+- **PV et armure** : attributs `GENERIC_MAX_HEALTH` et `GENERIC_ARMOR` dans `createAttributes()`.
+- **Dégâts** : ce sont les **dégâts finaux reçus par le joueur**, déjà par difficulté. Ils ne peuvent pas venir du seul attribut `GENERIC_ATTACK_DAMAGE`, car le jeu le rééchelonne contre un joueur (Facile : `min(x/2 + 1, x)`, Difficile : `x × 1,5`), ce qui ne donne ni les fourchettes du Gonflé ni un +0,5 cœur constant pour le chef.
+  - Piste : surcharger `tryAttack`, calculer le montant selon `world.getDifficulty()` (tirage aléatoire dans la fourchette pour le Gonflé, vanilla + 1 PV pour le chef), et l'infliger avec un **type de dégâts du mod sans mise à l'échelle** (`scaling: never`, déclaré via un `FabricDynamicRegistryProvider` en datagen, avec un message de mort traduit). Centraliser le calcul dans une petite classe commune (ex. `DifficultyDamage`).
+  - En **Paisible**, pas de monstres, donc rien à définir.
+  - Contre une **autre créature** (combats entre factions), le jeu ne met pas les dégâts à l'échelle : utiliser la valeur **Normal**.
+- Le **recul** et les **bonus de chef** restent à part (recul : `GENERIC_KNOCKBACK_RESISTANCE` élevé pour le Gonflé).
+
+**Loot du chef de horde** : chair putréfiée + **10 % de chance** de lâcher l'**item d'invocation du sous-fifre**, uniquement si le joueur porte le coup mortel (`killed_by_player`). Les sous-fifres ne le lâchent pas : il faut tuer le chef.
+
+#### Sous-fifre du joueur
+
+Obtenu avec l'item d'invocation lâché par le chef de horde. L'item fonctionne **comme une Poké Ball** : il contient un sous-fifre, qu'on invoque et qu'on rappelle.
+
+**Version 1 (à implémenter)** :
+- **Une seule entité** pour le sous-fifre sauvage et celui du joueur : un champ **propriétaire** (UUID, NBT) optionnel. Sans propriétaire : hostile, membre de la horde. Avec propriétaire : il suit le joueur et le défend.
+- **Invocation / rappel** : clic droit sur un bloc avec l'item → le sous-fifre apparaît avec le joueur comme propriétaire. Clic droit sur son sous-fifre avec l'item → il retourne dedans. L'item n'est pas empilable (1 item = 1 sous-fifre). Les données du sous-fifre (vie, équipement, inventaire, améliorations) sont stockées **dans l'item** via un composant de données (1.21 : `DataComponentTypes.CUSTOM_DATA` ou un `ComponentType` du mod), pour qu'il garde tout entre deux invocations.
+- **Soleil** : le sous-fifre **sauvage brûle** comme un zombie normal ; celui **du joueur ne brûle pas** (`burnsInDaylight()` renvoie `false` seulement s'il a un propriétaire).
+- **Équipement** : armure (4 emplacements) et une arme en main.
+- **Combat au choix du joueur** : en mêlée avec une épée ou une hache, ou **à distance avec un arc ou une arbalète**. À distance, il **consomme des munitions** rangées dans son **petit inventaire** ; sans munitions, il repasse en mêlée.
+- **Interface** : accroupi + clic droit sur son sous-fifre ouvre son inventaire (emplacements d'armure, arme, munitions), comme l'inventaire du cheval ou du lama. `SimpleInventory` sauvegardé en NBT + `ScreenHandler` ; `ExtendedScreenHandlerFactory` (Fabric API) pour envoyer l'id de l'entité au client.
+- **IA** : `ZombieEntity` n'est pas une `TameableEntity`, donc les goals du loup (`FollowOwnerGoal`, `TrackOwnerAttackerGoal`, `AttackWithOwnerGoal`) sont à **réécrire** dans `entity/ai/` en s'en inspirant.
+- **Pièges à prévoir** : l'**Iron Golem** cible les monstres et attaquera le sous-fifre (exception à gérer, mixin ou prédicat sur son ciblage) ; les autres zombies (aveugle compris) et le joueur ne doivent pas le traiter comme un ennemi par erreur, et lui ne doit pas attaquer son propriétaire.
+- Difficulté : ⭐⭐⭐⭐ (inventaire, interface et IA de compagnon).
+
+**Plus tard** :
+- **Modes de comportement** (stockés en NBT, changés depuis l'interface) :
+  - **Agressif** : attaque toute créature hostile au joueur, avec la portée de vision d'un zombie vanilla.
+  - **Neutre** (comme le loup) : défend le joueur quand une entité l'attaque.
+  - **Passif** : n'attaque personne, même si le joueur est attaqué.
+  - **Sentinelle** : défend une **zone définie par le joueur** (position + rayon stockés en NBT) contre toute créature hostile.
+- **Améliorations** :
+  - augmenter le **nombre de sous-fifres invocables** en même temps (compteur par joueur, par exemple via l'Attachment API de Fabric) ;
+  - améliorer le sous-fifre lui-même : plus de PV, plus de dégâts, etc. (modificateurs d'attributs stockés dans l'item).
+
+**À définir** : ce qui arrive à l'item si le sous-fifre meurt (item vide, item détruit, ou temps de recharge avant de pouvoir le réinvoquer) ; nombre d'emplacements de l'inventaire ; nom de l'item d'invocation ; valeurs des dégâts du bûcheron et du sous-fifre sauvage ; bonus exacts du chef de horde (légers, par impulsions avec temps de recharge, sans les sous-fifres) : durée, temps de recharge, rayon (ses propres stats sont fixées dans « Stats des exceptions »).
 
 ## Items prévus
 
@@ -231,6 +320,8 @@ Membres actuels : zombie vanilla, zombie villageois, husk, noyé (tag `unearthed
 | **Effet Provocation** (Taunt) | Via l'arbalète d'améthyste | Pendant **10 s**, les **mobs hostiles** proches attaquent la cible. Sert à détourner l'attention des mobs | `StatusEffect` personnalisé : toutes les X ticks, les `HostileEntity` dans un rayon (à définir) prennent l'entité affectée comme cible (`setTarget`) |
 | **Effet Ouïe aiguisée** | Donné par le Prophète du Sculk | Augmente la portée d'écoute des zombies aveugles | `StatusEffect` personnalisé lu par le `GameEventListener` du zombie aveugle |
 | **Localisateurs de minerai** ×5 : diamant, fer, émeraude, redstone, lapis | Mineur des profondeurs, **1 % chacun** | Localisent le minerai correspondant le plus proche | À l'utilisation, scan limité autour du joueur (rayon et recharge à définir pour les performances) avec les tags de minerais (`BlockTags.DIAMOND_ORES`, etc.), indication de direction par particules ou message |
+| **Item d'invocation du sous-fifre** (nom à définir) | Chef de horde (Déterrés), **10 %**, kill par le joueur | Contient un sous-fifre, l'invoque et le rappelle, comme une Poké Ball | Item non empilable ; données du sous-fifre dans un composant de données (voir « Sous-fifre du joueur ») |
+| **Effet Englué** | Bras du zombie lanceur (Déterrés) | **Lenteur pendant 3 s** + **bave verte à l'écran** ; retiré par le lait | `StatusEffect` personnalisé avec modificateur de vitesse ; overlay côté client avec `HudRenderCallback` tant que le joueur a l'effet (les effets sont déjà synchronisés au client) |
 | **Armure d'améthyste** | Craft : améthyste, laine, fragments d'écho | **Réduit les bruits** du joueur (moins de vibrations détectées) | `ArmorMaterial` enregistré (registre en 1.21) ; réduction du bruit via un mixin sur l'émission des GameEvents du joueur, ou vérifiée par les listeners du mod. Pièce par pièce ou set complet : à définir |
 
 ### Idées supplémentaires (non validées)
@@ -246,12 +337,13 @@ Membres actuels : zombie vanilla, zombie villageois, husk, noyé (tag `unearthed
 1. Mise en place du projet (template Fabric, IntelliJ, `runClient` fonctionnel)
 2. Premier zombie simple (zombie gelé) : entité, attributs, rendu, œuf, spawn par biome
 3. Zombie aveugle (IA, goals, GameEvents)
-4. Zombie lanceur (projectiles, DataTracker)
+4. Zombie lanceur (projectiles, DataTracker) : première pierre de la faction Les Déterrés (chaque faction démarre par **un zombie fondateur** : Givre = gelé, Abysses = aveugle, Déterrés = lanceur)
 5. Tags régionaux, hostilité inter-zombies, puis factions en JSON (tester d'abord avec la faction Givre)
-6. Zombie général et hordes
-7. Faction Abysses et ses items (arbalète d'améthyste, effets Provocation et Ouïe aiguisée, localisateurs, armure d'améthyste)
-8. Zombie marchand pacifiste
-9. Raids de factions
+6. Spawn des Déterrés (surface + grottes jusqu'à Y -8, plafonnement)
+7. Faction Les Déterrés : chef de horde (le « général »), sous-fifres, puis le sous-fifre du joueur (item d'invocation, équipement, inventaire), puis les autres membres
+8. Faction Abysses et ses items (arbalète d'améthyste, effets Provocation et Ouïe aiguisée, localisateurs, armure d'améthyste)
+9. Zombie marchand pacifiste
+10. Raids de factions
 
 Idées gardées pour une faction future : le zombie **rampant** (circule dans les tunnels d'un bloc de haut).
 
