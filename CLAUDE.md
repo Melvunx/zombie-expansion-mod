@@ -61,6 +61,7 @@ Toutes les commandes passent par le wrapper Gradle (`./gradlew`, ou `gradlew.bat
 - Référencer un tag **vanilla** depuis un `FabricTagProvider` demande `forceAddTag` (pas `addTag`), sinon la datagen échoue avec « missing following references ».
 - Restent écrits à la main dans `src/main/resources` : textures, sons (`sounds.json`), `fabric.mod.json`, `zombie_expansion.mixins.json`. Les factions JSON pourront être générées plus tard par un `DataProvider` personnalisé.
 - Après une modification de provider : relancer `runDatagen` **avant** `runClient`.
+- **Piège Blockbench / GeckoLib (animations)** : Blockbench exporte les temps entiers (`"0"`, `"1"`, `"3"`) **avant** les temps décimaux (`"0.25"`), et GeckoLib lit les keyframes dans l'ordre du fichier sans les trier. Résultat : une animation qui ne joue pas ou saute (c'est ce qui a cassé `walk` et `idle` du zombie lanceur). Après chaque export, lancer `python3 tools/sort_keyframes.py src/main/resources/assets/zombie_expansion/animations/entity/*.json` (ajouter `--check` pour seulement vérifier).
 
 ### Structure prévue
 
