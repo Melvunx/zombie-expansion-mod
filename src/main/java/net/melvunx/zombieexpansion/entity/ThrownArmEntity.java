@@ -1,17 +1,20 @@
 package net.melvunx.zombieexpansion.entity;
 
 import net.melvunx.zombieexpansion.effect.GluedStatusEffect;
-import net.melvunx.zombieexpansion.registry.ModEntityTypeTags;
+import net.melvunx.zombieexpansion.faction.Faction;
 import net.melvunx.zombieexpansion.registry.ModEntities;
 import net.melvunx.zombieexpansion.registry.ModStatusEffects;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.mob.EndermanEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.projectile.thrown.ThrownItemEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
+import net.minecraft.particle.EntityEffectParticleEffect;
 import net.minecraft.particle.ParticleTypes;
+import net.minecraft.util.math.ColorHelper;
 import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.world.World;
@@ -31,8 +34,10 @@ import software.bernie.geckolib.util.GeckoLibUtil;
  * la physique (gravité, collision), la synchronisation client et le rendu « objet en vol ».
  * Implémente {@link GeoEntity} : le bras est un modèle GeckoLib (thrown_arm.*) qui tournoie en vol.
  *
- * Au contact d'une créature : un peu de dégâts, puis l'effet {@link ModStatusEffects#GLUED}.
- * Il traverse les membres de la faction Les Déterrés (pas de tir ami).
+ * Au contact d'une créature quelconque (pas seulement le joueur) : les mêmes dégâts, puis l'effet
+ * {@link ModStatusEffects#GLUED}. Il traverse les membres de la faction du lanceur (ni dégâts ni effet).
+ * Enderman : comme avec une flèche, il se téléporte et ne subit ni dégâts ni effet.
+ * En vol, il laisse une traînée de particules de potion vertes, de la couleur de l'effet.
  */
 public class ThrownArmEntity extends ThrownItemEntity implements GeoEntity {
 	/** Dégâts d'impact : 2 PV (1 cœur), sous la mêlée du zombie vanilla. À ajuster en jeu. */
@@ -68,17 +73,41 @@ public class ThrownArmEntity extends ThrownItemEntity implements GeoEntity {
 		return Items.ROTTEN_FLESH;
 	}
 
-	/** Un zombie de la faction ne blesse pas ses alliés : le bras passe à travers. */
+	/** Un membre de la faction du lanceur est un allié : le bras passe à travers, sans dégâts ni effet. */
 	@Override
 	protected boolean canHit(Entity entity) {
-		return super.canHit(entity) && !entity.getType().isIn(ModEntityTypeTags.UNEARTHED_FACTION);
+		return super.canHit(entity) && !isAlly(entity);
+	}
+
+	/**
+	 * La faction se lit sur le type du lanceur (tags, jamais un instanceof). Si le lanceur a disparu
+	 * entre-temps (mort, déchargé), on retombe sur le zombie lanceur, donc sur Les Déterrés.
+	 */
+	private boolean isAlly(Entity entity) {
+		Entity owner = getOwner();
+		EntityType<?> ownerType = owner != null ? owner.getType() : ModEntities.THROWER_ZOMBIE;
+		return Faction.of(ownerType).map(faction -> faction.includes(entity.getType())).orElse(false);
+	}
+
+	/** Traînée verte côté client : le serveur n'a pas à envoyer de particules, chaque client dessine les siennes. */
+	@Override
+	public void tick() {
+		super.tick();
+		if (getWorld().isClient) {
+			getWorld().addParticle(
+				EntityEffectParticleEffect.create(ParticleTypes.ENTITY_EFFECT, ColorHelper.Argb.withAlpha(255, GluedStatusEffect.COLOR)),
+				getParticleX(0.5), getY(), getParticleZ(0.5), 0.0, 0.0, 0.0);
+		}
 	}
 
 	@Override
 	protected void onEntityHit(EntityHitResult hit) {
 		super.onEntityHit(hit);
 		Entity target = hit.getEntity();
-		if (target.damage(getDamageSources().thrown(this, getOwner()), DAMAGE) && target instanceof LivingEntity living) {
+		boolean damaged = target.damage(getDamageSources().thrown(this, getOwner()), DAMAGE);
+		// L'Enderman renvoie vrai même sans subir de dégâts (il s'est téléporté, comme face à une flèche) :
+		// il faut donc l'exclure explicitement pour ne pas l'engluer.
+		if (damaged && target instanceof LivingEntity living && !(target instanceof EndermanEntity)) {
 			living.addStatusEffect(new StatusEffectInstance(ModStatusEffects.GLUED, GluedStatusEffect.DEFAULT_DURATION_TICKS), getOwner());
 		}
 	}

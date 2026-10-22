@@ -19,12 +19,18 @@ public class GluedStatusEffect extends StatusEffect {
 	/** Durée habituelle de l'effet (3 s) : bras lancé et coups du zombie lanceur. */
 	public static final int DEFAULT_DURATION_TICKS = 60;
 
+	/**
+	 * Couleur de l'effet (RVB) : celle des particules de potion qui entourent la créature affectée
+	 * (le jeu les dessine tout seul à partir de cette couleur) et de la traînée du bras lancé.
+	 */
+	public static final int COLOR = 0x6FBF3A;
+
 	/** -30 % de vitesse (Lenteur I vanilla fait -15 %). À ajuster en jeu. */
 	private static final double SLOWDOWN = -0.30;
 
 	public GluedStatusEffect() {
 		// HARMFUL : affiché en rouge, retiré par le lait, ignoré par les potions « bénéfiques ».
-		super(StatusEffectCategory.HARMFUL, 0x6FBF3A);
+		super(StatusEffectCategory.HARMFUL, COLOR);
 		// L'identifiant du modificateur doit être unique par effet : il sert de clé pour le retirer.
 		addAttributeModifier(EntityAttributes.GENERIC_MOVEMENT_SPEED, ZombieExpansion.id("effect.glued"),
 			SLOWDOWN, EntityAttributeModifier.Operation.ADD_MULTIPLIED_TOTAL);
