@@ -1,0 +1,29 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"animation.thrown_arm.spin": {
+			"loop": true,
+			"animation_length": 0.4,
+			"bones": {
+				"arm": {
+					"rotation": {
+						"0": {
+							"vector": [
+								0,
+								0,
+								0
+							]
+						},
+						"0.4": {
+							"vector": [
+								-360,
+								0,
+								0
+							]
+						}
+					}
+				}
+			}
+		}
+	}
+}
