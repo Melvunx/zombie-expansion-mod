@@ -1,5 +1,6 @@
 package net.melvunx.zombieexpansion.entity;
 
+import net.melvunx.zombieexpansion.effect.GluedStatusEffect;
 import net.melvunx.zombieexpansion.registry.ModEntityTypeTags;
 import net.melvunx.zombieexpansion.registry.ModEntities;
 import net.melvunx.zombieexpansion.registry.ModStatusEffects;
@@ -36,8 +37,6 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 public class ThrownArmEntity extends ThrownItemEntity implements GeoEntity {
 	/** Dégâts d'impact : 2 PV (1 cœur), sous la mêlée du zombie vanilla. À ajuster en jeu. */
 	private static final float DAMAGE = 2.0f;
-	/** Durée de l'effet Englué : 3 secondes. */
-	private static final int GLUED_TICKS = 60;
 	/** Code d'événement « le projectile éclate » : lu par handleStatus côté client. */
 	private static final byte STATUS_SPLAT = 3;
 
@@ -80,7 +79,7 @@ public class ThrownArmEntity extends ThrownItemEntity implements GeoEntity {
 		super.onEntityHit(hit);
 		Entity target = hit.getEntity();
 		if (target.damage(getDamageSources().thrown(this, getOwner()), DAMAGE) && target instanceof LivingEntity living) {
-			living.addStatusEffect(new StatusEffectInstance(ModStatusEffects.GLUED, GLUED_TICKS), getOwner());
+			living.addStatusEffect(new StatusEffectInstance(ModStatusEffects.GLUED, GluedStatusEffect.DEFAULT_DURATION_TICKS), getOwner());
 		}
 	}
 

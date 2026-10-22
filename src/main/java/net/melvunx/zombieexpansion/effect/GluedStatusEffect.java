@@ -16,6 +16,9 @@ import net.melvunx.zombieexpansion.ZombieExpansion;
  * Le constructeur de StatusEffect est protégé : c'est pour ça qu'on passe par une sous-classe.
  */
 public class GluedStatusEffect extends StatusEffect {
+	/** Durée habituelle de l'effet (3 s) : bras lancé et coups du zombie lanceur. */
+	public static final int DEFAULT_DURATION_TICKS = 60;
+
 	/** -30 % de vitesse (Lenteur I vanilla fait -15 %). À ajuster en jeu. */
 	private static final double SLOWDOWN = -0.30;
 

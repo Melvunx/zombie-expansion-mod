@@ -1,7 +1,9 @@
 package net.melvunx.zombieexpansion.entity;
 
+import net.melvunx.zombieexpansion.effect.GluedStatusEffect;
 import net.melvunx.zombieexpansion.entity.ai.ThrowArmGoal;
 import net.melvunx.zombieexpansion.faction.Faction;
+import net.melvunx.zombieexpansion.registry.ModStatusEffects;
 import net.melvunx.zombieexpansion.registry.ModEntities;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityData;
@@ -13,6 +15,7 @@ import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.data.TrackedData;
 import net.minecraft.entity.data.TrackedDataHandlerRegistry;
+import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.mob.ZombieEntity;
 import net.minecraft.item.ItemStack;
@@ -57,7 +60,9 @@ import software.bernie.geckolib.util.GeckoLibUtil;
  */
 public class ThrowerZombieEntity extends ZombieEntity implements GeoEntity {
 	/** En dessous de cette distance (blocs) il se bat au corps à corps ; au-delà, il lance son bras. */
-	public static final double MELEE_RANGE = 5.0;
+	public static final double MELEE_RANGE = 4.0;
+	/** Chance que chaque coup de mêlée qui touche applique l'effet Englué : le lanceur reste gênant de près. */
+	private static final float MELEE_GLUED_CHANCE = 0.30f;
 	/** Délai avant que le bras ne se mette à repousser (4 s), décompté seulement si la cible n'est pas à portée de mêlée. */
 	private static final int ARM_REGROW_DELAY_TICKS = 80;
 	/** Durées des animations de repousse (1,2 s et 0,7 s) : le goal ne tire pas avant leur fin. */
@@ -221,13 +226,18 @@ public class ThrowerZombieEntity extends ZombieEntity implements GeoEntity {
 		triggerAnim(REGROW_CONTROLLER, burst ? "regrow_burst" : "regrow");
 	}
 
-	/** Un coup de mêlée : animation à deux bras ou à un bras selon l'état du bras droit, variante au hasard. */
+	/** Un coup de mêlée : 30 % de chance d'engluer la cible ; animation à deux bras ou à un bras selon l'état du bras droit, variante au hasard. */
 	@Override
 	public boolean tryAttack(Entity target) {
 		boolean singleArm = isArmThrown() || isRegrowing();
 		boolean alt = random.nextBoolean();
 		triggerAnim(ATTACK_CONTROLLER, (singleArm ? "attack_single" : "attack_both") + (alt ? "_alt" : ""));
-		return super.tryAttack(target);
+		boolean hit = super.tryAttack(target);
+		// Même effet que le bras lancé, sinon coller le lanceur serait toujours la bonne réponse.
+		if (hit && target instanceof LivingEntity living && random.nextFloat() < MELEE_GLUED_CHANCE) {
+			living.addStatusEffect(new StatusEffectInstance(ModStatusEffects.GLUED, GluedStatusEffect.DEFAULT_DURATION_TICKS), this);
+		}
+		return hit;
 	}
 
 	/**
@@ -253,7 +263,7 @@ public class ThrowerZombieEntity extends ZombieEntity implements GeoEntity {
 		arm.setVelocity(dx, dy + lift, dz, THROW_SPEED, THROW_DIVERGENCE);
 
 		getWorld().spawnEntity(arm);
-		getWorld().playSound(null, getX(), getY(), getZ(), SoundEvents.ENTITY_SLIME_SQUISH, SoundCategory.HOSTILE, 1.0f,
+		getWorld().playSound(null, getX(), getY(), getZ(), SoundEvents.ENTITY_EGG_THROW, SoundCategory.HOSTILE, 1.0f,
 			0.8f + MathHelper.nextFloat(random, 0.0f, 0.4f));
 		armRegrowTicks = ARM_REGROW_DELAY_TICKS;
 		setArmThrown(true);
