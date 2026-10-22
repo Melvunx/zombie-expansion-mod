@@ -8,6 +8,7 @@ import net.melvunx.zombieexpansion.registry.ModItems;
 import net.melvunx.zombieexpansion.registry.ModStatusEffects;
 import net.melvunx.zombieexpansion.world.AbyssSpawns;
 import net.melvunx.zombieexpansion.world.FrostSpawns;
+import net.melvunx.zombieexpansion.world.UnearthedSpawns;
 import net.minecraft.util.Identifier;
 
 import org.slf4j.Logger;
@@ -33,6 +34,7 @@ public class ZombieExpansion implements ModInitializer {
 		ModItems.register();
 		FrostSpawns.register();
 		AbyssSpawns.register();
+		UnearthedSpawns.register();
 		ModCommands.register();
 
 		LOGGER.info("Zombie Expansion loaded");

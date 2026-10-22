@@ -75,7 +75,7 @@ src/main/java/net/melvunx/zombieexpansion/
   faction/                    # Faction (enum liée à un tag d'entités), FrostVulnerability ; relations à venir en JSON
   event/                      # hordes, raids de factions (PersistentState)
   registry/                   # ModEntities, ModItems, ModSounds...
-  world/                      # spawn par biome (BiomeModifications) : FrostSpawns, AbyssSpawns
+  world/                      # spawn par biome (BiomeModifications) : FrostSpawns, AbyssSpawns, UnearthedSpawns
   command/                    # /zombie_expansion biome | faction | nearby [rayon] | info (racine unique dans ModCommands)
   mixin/                      # SpawnRestrictionMixin
   client/                     # code client uniquement
@@ -222,7 +222,7 @@ Faction des zombies « classiques », **la première que le joueur découvre**. 
 **Règles de spawn des Déterrés** :
 - **Surface et grottes** jusqu'à Y -8 pour tous les membres, **sauf le Chef de horde : surface uniquement**.
 - **Biomes du Givre** : la surface appartient au zombie gelé (voir Givre). Les Déterrés n'y apparaissent que **dans les grottes sous ces biomes**. Conséquence : le Chef de horde, qui ne spawn qu'en surface, n'apparaît dans aucun biome du Givre.
-- **Plafonnement** : une part cible par membre (de l'ordre de 5 à 10 % de la liste du biome) et un total des Déterrés plafonné (de l'ordre de 35 %), pour que le zombie vanilla reste majoritaire. Chiffres exacts à régler en jeu.
+- **Plafonnement** (`UnearthedSpawns`) : chaque membre a une **part du poids du zombie vanilla du biome** (cible 5 à 10 %, lanceur : 8 % soit un poids de 8 pour 95), et la **somme des parts est plafonnée à 35 %** (`TOTAL_SHARE_CAP`, vérifiée au chargement : le mod refuse de démarrer si elle est dépassée). Les Déterrés modés font donc au plus ~26 % des zombies d'un biome. Seuls les biomes ayant un zombie reçoivent l'entrée. Chiffres à régler en jeu.
 - **Nouvelles factions** : à chaque ajout d'une faction, **demander** à Melvin si les Déterrés doivent aussi apparaître dans les grottes sous ses biomes de surface. Ne pas le décider seul.
 
 **Principe de design** : chaque membre apprend au joueur **un réflexe de base** de Minecraft (contourner, reculer, tuer de loin, viser le chef, protéger sa base…). Il doit y avoir plusieurs manières de les affronter.
@@ -254,7 +254,7 @@ Membres actuels : zombie vanilla et zombie villageois (tag `unearthed_faction`, 
 - **Projectile** (`ThrownArmEntity`, dérive de `ThrownItemEntity`) : **2 PV** d'impact + effet **Englué 3 s**. Il traverse les membres des Déterrés. Éclaboussure de bave à l'impact.
 - **Effet Englué** (`GluedStatusEffect`, `ModStatusEffects.GLUED`) : **-30 % de vitesse** (Lenteur I vanilla : -15 %), retiré par le lait. Overlay de bave verte côté client (`client/GluedOverlay`, `HudRenderCallback`, texture `textures/misc/glued_overlay.png` générée par script), qui s'estompe sur la dernière seconde.
 - **Provisoire** : renderer et texture vanilla du zombie (`ThrowerZombieRenderer`, bras droit masqué) et projectile affiché comme de la chair putréfiée. Modèle Blockbench, texture et sons à faire. **Armure** : le calque d'armure masque aussi le bras (même modèle), à vérifier en jeu.
-- **Spawn** : règle commune `Faction.allowsUnearthedSpawn` (surface et grottes, Y > -8, sous terre uniquement dans les biomes du Givre, jamais dans le Deep Dark). **Pas encore d'entrée de spawn par biome** : seul l'œuf (onglet des œufs) et `/summon` le font apparaître, en attendant `UnearthedSpawns`.
+- **Spawn** : règle commune `Faction.allowsUnearthedSpawn` (surface et grottes, Y > -8, sous terre uniquement dans les biomes du Givre, jamais dans le Deep Dark). Entrée de spawn ajoutée par `UnearthedSpawns` (part de 8 %, groupes de 1 à 2).
 - **Loot** : chair putréfiée 0-2.
 
 #### Stats des exceptions
