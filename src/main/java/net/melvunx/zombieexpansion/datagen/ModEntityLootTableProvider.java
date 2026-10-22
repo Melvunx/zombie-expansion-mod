@@ -37,6 +37,13 @@ public class ModEntityLootTableProvider extends SimpleFabricLootTableProvider {
 				.with(ItemEntry.builder(Items.SNOWBALL)
 					.apply(SetCountLootFunction.builder(UniformLootNumberProvider.create(0, 3))))));
 
+		// Zombie lanceur : chair putréfiée, comme le zombie vanilla.
+		exporter.accept(ModEntities.THROWER_ZOMBIE.getLootTableId(), LootTable.builder()
+			.pool(LootPool.builder()
+				.rolls(ConstantLootNumberProvider.create(1))
+				.with(ItemEntry.builder(Items.ROTTEN_FLESH)
+					.apply(SetCountLootFunction.builder(UniformLootNumberProvider.create(0, 2))))));
+
 		// Zombie aveugle : chair putréfiée + 0 à 2 fragments d'écho (moyenne 1 par mort), ces derniers
 		// seulement si le joueur porte le coup mortel : c'est une récompense, pas un farm à la lave.
 		exporter.accept(ModEntities.BLINDED_ZOMBIE.getLootTableId(), LootTable.builder()

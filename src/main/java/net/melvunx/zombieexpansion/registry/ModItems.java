@@ -21,6 +21,11 @@ public final class ModItems {
 		new SpawnEggItem(ModEntities.BLINDED_ZOMBIE, 0x0E2A33, 0x1CBFC4, new Item.Settings())
 	);
 
+	public static final SpawnEggItem THROWER_ZOMBIE_SPAWN_EGG = register(
+		"thrower_zombie_spawn_egg",
+		new SpawnEggItem(ModEntities.THROWER_ZOMBIE, 0x4F7A3A, 0x9BD13C, new Item.Settings())
+	);
+
 	private ModItems() {
 	}
 
@@ -34,6 +39,7 @@ public final class ModItems {
 			.register(entries -> {
 				entries.add(FROZEN_ZOMBIE_SPAWN_EGG);
 				entries.add(BLINDED_ZOMBIE_SPAWN_EGG);
+				entries.add(THROWER_ZOMBIE_SPAWN_EGG);
 			});
 	}
 }

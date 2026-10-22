@@ -1,6 +1,7 @@
 {
   "values": [
     "minecraft:zombie",
-    "minecraft:zombie_villager"
+    "minecraft:zombie_villager",
+    "zombie_expansion:thrower_zombie"
   ]
 }

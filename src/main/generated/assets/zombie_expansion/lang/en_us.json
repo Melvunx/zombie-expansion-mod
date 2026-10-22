@@ -32,9 +32,12 @@
   "effect.zombie_expansion.glued": "Glued",
   "entity.zombie_expansion.blinded_zombie": "The Blinded",
   "entity.zombie_expansion.frozen_zombie": "Frozen Zombie",
+  "entity.zombie_expansion.thrower_zombie": "Thrower Zombie",
+  "entity.zombie_expansion.thrown_arm": "Thrown Arm",
   "faction.zombie_expansion.abyss": "Abyss",
   "faction.zombie_expansion.frost": "Frost",
   "faction.zombie_expansion.unearthed": "The Unearthed",
   "item.zombie_expansion.blinded_zombie_spawn_egg": "The Blinded Spawn Egg",
-  "item.zombie_expansion.frozen_zombie_spawn_egg": "Frozen Zombie Spawn Egg"
+  "item.zombie_expansion.frozen_zombie_spawn_egg": "Frozen Zombie Spawn Egg",
+  "item.zombie_expansion.thrower_zombie_spawn_egg": "Thrower Zombie Spawn Egg"
 }

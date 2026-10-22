@@ -28,5 +28,6 @@ public class ModModelProvider extends FabricModelProvider {
 	public void generateItemModels(ItemModelGenerator generator) {
 		generator.register(ModItems.FROZEN_ZOMBIE_SPAWN_EGG, SPAWN_EGG);
 		generator.register(ModItems.BLINDED_ZOMBIE_SPAWN_EGG, SPAWN_EGG);
+		generator.register(ModItems.THROWER_ZOMBIE_SPAWN_EGG, SPAWN_EGG);
 	}
 }

@@ -32,9 +32,12 @@
   "effect.zombie_expansion.glued": "Englué",
   "entity.zombie_expansion.blinded_zombie": "Zombie aveugle",
   "entity.zombie_expansion.frozen_zombie": "Zombie gelé",
+  "entity.zombie_expansion.thrower_zombie": "Zombie lanceur",
+  "entity.zombie_expansion.thrown_arm": "Bras lancé",
   "faction.zombie_expansion.abyss": "Abysses",
   "faction.zombie_expansion.frost": "Givre",
   "faction.zombie_expansion.unearthed": "Les Déterrés",
   "item.zombie_expansion.blinded_zombie_spawn_egg": "Œuf d'apparition de zombie aveugle",
-  "item.zombie_expansion.frozen_zombie_spawn_egg": "Œuf d'apparition de zombie gelé"
+  "item.zombie_expansion.frozen_zombie_spawn_egg": "Œuf d'apparition de zombie gelé",
+  "item.zombie_expansion.thrower_zombie_spawn_egg": "Œuf d'apparition de zombie lanceur"
 }
