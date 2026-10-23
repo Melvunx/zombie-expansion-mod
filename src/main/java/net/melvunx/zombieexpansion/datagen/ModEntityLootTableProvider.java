@@ -44,6 +44,13 @@ public class ModEntityLootTableProvider extends SimpleFabricLootTableProvider {
 				.with(ItemEntry.builder(Items.ROTTEN_FLESH)
 					.apply(SetCountLootFunction.builder(UniformLootNumberProvider.create(0, 2))))));
 
+		// Chef de horde : chair putréfiée (l'item d'invocation du sous-fifre viendra avec les sous-fifres).
+		exporter.accept(ModEntities.HORDE_CHIEF.getLootTableId(), LootTable.builder()
+			.pool(LootPool.builder()
+				.rolls(ConstantLootNumberProvider.create(1))
+				.with(ItemEntry.builder(Items.ROTTEN_FLESH)
+					.apply(SetCountLootFunction.builder(UniformLootNumberProvider.create(0, 2))))));
+
 		// Zombie aveugle : chair putréfiée + 0 à 2 fragments d'écho (moyenne 1 par mort), ces derniers
 		// seulement si le joueur porte le coup mortel : c'est une récompense, pas un farm à la lave.
 		exporter.accept(ModEntities.BLINDED_ZOMBIE.getLootTableId(), LootTable.builder()

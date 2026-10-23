@@ -29,9 +29,11 @@
   "command.zombie_expansion.nearby.entry": "  %s : %s",
   "command.zombie_expansion.nearby.none": "  aucun",
   "command.zombie_expansion.nearby.title": "Membres de faction dans un rayon de %s blocs :",
+  "death.attack.zombie_expansion.horde_attack": "%1$s a été tué par %2$s",
   "effect.zombie_expansion.glued": "Englué",
   "entity.zombie_expansion.blinded_zombie": "Zombie aveugle",
   "entity.zombie_expansion.frozen_zombie": "Zombie gelé",
+  "entity.zombie_expansion.horde_chief": "Chef de horde",
   "entity.zombie_expansion.thrower_zombie": "Zombie lanceur",
   "entity.zombie_expansion.thrown_arm": "Bras lancé",
   "faction.zombie_expansion.abyss": "Abysses",
@@ -39,5 +41,6 @@
   "faction.zombie_expansion.unearthed": "Les Déterrés",
   "item.zombie_expansion.blinded_zombie_spawn_egg": "Œuf d'apparition de zombie aveugle",
   "item.zombie_expansion.frozen_zombie_spawn_egg": "Œuf d'apparition de zombie gelé",
+  "item.zombie_expansion.horde_chief_spawn_egg": "Œuf d'apparition de chef de horde",
   "item.zombie_expansion.thrower_zombie_spawn_egg": "Œuf d'apparition de zombie lanceur"
 }

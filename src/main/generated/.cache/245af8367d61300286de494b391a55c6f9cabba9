@@ -1,5 +1,5 @@
-// 1.21.1	2026-10-23T22:32:42.5379778	Zombie Expansion/Tags for minecraft:entity_type
+// 1.21.1	2026-10-23T22:33:43.5379799	Zombie Expansion/Tags for minecraft:entity_type
 49de6144da1a2d5c75c7fbb2d7b8295837874f6f data\zombie_expansion\tags\entity_type\abyss_faction.json
 e81131e3354c2c2a49aa7d4e9e91cd16abf783ed data\zombie_expansion\tags\entity_type\frost_faction.json
 e81131e3354c2c2a49aa7d4e9e91cd16abf783ed data\minecraft\tags\entity_type\freeze_immune_entity_types.json
-f62a2b31c86f223b03d471b81de8d7ad3b5017b8 data\zombie_expansion\tags\entity_type\unearthed_faction.json
+9042360aa0cc7bd30d74509a58d45ec1089ccc4e data\zombie_expansion\tags\entity_type\unearthed_faction.json

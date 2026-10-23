@@ -2,6 +2,7 @@
   "values": [
     "minecraft:zombie",
     "minecraft:zombie_villager",
-    "zombie_expansion:thrower_zombie"
+    "zombie_expansion:thrower_zombie",
+    "zombie_expansion:horde_chief"
   ]
 }

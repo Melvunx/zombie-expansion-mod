@@ -6,6 +6,7 @@ import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.melvunx.zombieexpansion.client.render.BlindedZombieRenderer;
 import net.melvunx.zombieexpansion.client.render.FrozenZombieRenderer;
+import net.melvunx.zombieexpansion.client.render.HordeChiefRenderer;
 import net.melvunx.zombieexpansion.client.render.ThrowerZombieRenderer;
 import net.melvunx.zombieexpansion.client.render.ThrownArmRenderer;
 import net.melvunx.zombieexpansion.registry.ModEntities;
@@ -21,6 +22,7 @@ public class ZombieExpansionClient implements ClientModInitializer {
 		EntityRendererRegistry.register(ModEntities.FROZEN_ZOMBIE, FrozenZombieRenderer::new);
 		EntityRendererRegistry.register(ModEntities.BLINDED_ZOMBIE, BlindedZombieRenderer::new);
 		EntityRendererRegistry.register(ModEntities.THROWER_ZOMBIE, ThrowerZombieRenderer::new);
+		EntityRendererRegistry.register(ModEntities.HORDE_CHIEF, HordeChiefRenderer::new);
 		GluedOverlay.register();
 
 		EntityRendererRegistry.register(ModEntities.THROWN_ARM, ThrownArmRenderer::new);

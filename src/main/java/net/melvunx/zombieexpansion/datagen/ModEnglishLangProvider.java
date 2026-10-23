@@ -22,6 +22,9 @@ public class ModEnglishLangProvider extends FabricLanguageProvider {
 		builder.add("effect.zombie_expansion.glued", "Glued");
 		builder.add(ModEntities.THROWER_ZOMBIE, "Thrower Zombie");
 		builder.add(ModEntities.THROWN_ARM, "Thrown Arm");
+		builder.add(ModEntities.HORDE_CHIEF, "Horde Chief");
+		builder.add(ModItems.HORDE_CHIEF_SPAWN_EGG, "Horde Chief Spawn Egg");
+		builder.add("death.attack.zombie_expansion.horde_attack", "%1$s was slain by %2$s");
 		builder.add(ModItems.THROWER_ZOMBIE_SPAWN_EGG, "Thrower Zombie Spawn Egg");
 		builder.add(ModItems.FROZEN_ZOMBIE_SPAWN_EGG, "Frozen Zombie Spawn Egg");
 

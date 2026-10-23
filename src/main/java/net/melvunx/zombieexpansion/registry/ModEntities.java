@@ -4,6 +4,7 @@ import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRe
 import net.melvunx.zombieexpansion.ZombieExpansion;
 import net.melvunx.zombieexpansion.entity.BlindedZombieEntity;
 import net.melvunx.zombieexpansion.entity.FrozenZombieEntity;
+import net.melvunx.zombieexpansion.entity.HordeChiefEntity;
 import net.melvunx.zombieexpansion.entity.ThrownArmEntity;
 import net.melvunx.zombieexpansion.entity.ThrowerZombieEntity;
 import net.minecraft.entity.Entity;
@@ -44,6 +45,13 @@ public final class ModEntities {
 			.maxTrackingRange(8)
 	);
 
+	public static final EntityType<HordeChiefEntity> HORDE_CHIEF = register(
+		"horde_chief",
+		EntityType.Builder.create(HordeChiefEntity::new, SpawnGroup.MONSTER)
+			.dimensions(0.6f, 1.95f)
+			.maxTrackingRange(8)
+	);
+
 	/** Projectile : groupe MISC (hors plafond de monstres), petite hitbox, suivi réseau court comme la boule de neige. */
 	public static final EntityType<ThrownArmEntity> THROWN_ARM = register(
 		"thrown_arm",
@@ -68,6 +76,7 @@ public final class ModEntities {
 		FabricDefaultAttributeRegistry.register(BLINDED_ZOMBIE, BlindedZombieEntity.createAttributes());
 		// Mêmes attributs que le zombie vanilla : le budget de la faction Les Déterrés l'impose.
 		FabricDefaultAttributeRegistry.register(THROWER_ZOMBIE, ZombieEntity.createZombieAttributes());
+		FabricDefaultAttributeRegistry.register(HORDE_CHIEF, HordeChiefEntity.createAttributes());
 
 		// Où et quand le jeu a le droit de le faire apparaître (même emplacement que le zombie vanilla).
 		SpawnRestriction.register(FROZEN_ZOMBIE, SpawnLocationTypes.ON_GROUND,
@@ -76,5 +85,7 @@ public final class ModEntities {
 			Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, BlindedZombieEntity::canSpawn);
 		SpawnRestriction.register(THROWER_ZOMBIE, SpawnLocationTypes.ON_GROUND,
 			Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, ThrowerZombieEntity::canSpawn);
+		SpawnRestriction.register(HORDE_CHIEF, SpawnLocationTypes.ON_GROUND,
+			Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, HordeChiefEntity::canSpawn);
 	}
 }
