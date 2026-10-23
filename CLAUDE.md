@@ -71,7 +71,8 @@ src/main/java/net/melvunx/zombieexpansion/
   ZombieExpansionDataGenerator.java  # point d'entrée de la datagen
   datagen/                    # providers (langues, modèles, loot, tags, recettes)
   entity/                     # classes des zombies et projectiles
-  entity/ai/                  # goals personnalisés (InvestigateVibrationGoal, SearchGoal, ThrowArmGoal)
+  entity/ai/                  # goals personnalisés (InvestigateVibrationGoal, SearchGoal, ThrowArmGoal, FollowLeaderGoal)
+  damage/                     # DifficultyDamage : type de dégâts sans mise à l'échelle + tables par difficulté
   effect/                     # effets de statut (GluedStatusEffect), enregistrés dans registry/ModStatusEffects
   faction/                    # Faction (enum liée à un tag d'entités), FrostVulnerability ; relations à venir en JSON
   event/                      # hordes, raids de factions (PersistentState)
@@ -273,6 +274,13 @@ Membres actuels : zombie vanilla et zombie villageois (tag `unearthed_faction`, 
 - **Loot** : chair putréfiée 0-2.
 - **Pas d'objets ni d'équipement** : `canGather` renvoie faux, pas d'équipement initial, citrouille d'Halloween retirée. Le modèle n'affiche ni armure ni objet tenu ; cela règle la limite correspondante.
 
+**Chef de horde et sous-fifre** (implémentés, `HordeChiefEntity` id `horde_chief` « Horde Chief » / « Chef de horde », `HordeMinionEntity` id `horde_minion` « Horde Minion » / « Sous-fifre ») :
+- **Dégâts fixes** : les deux étendent `FixedDamageZombieEntity`, dont `tryAttack` (recopié de `MobEntity` et `ZombieEntity`) inflige les montants d'une `DifficultyDamage.Table` avec le type de dégâts `zombie_expansion:horde_attack` (`scaling: never`, entrée de registre dynamique générée par `ModDamageTypeProvider` via `buildRegistry`). Message de mort traduit (`death.attack.zombie_expansion.horde_attack`). Contre une créature autre qu'un joueur : valeur Normale.
+- **Chef** : 30 PV, armure 3, dégâts 3,5 / 4 / 5,5 PV (vanilla + 1 PV), jamais bébé, pas de barre de boss. Spawn **surface uniquement** (`canSpawn` : règle des Déterrés + ciel visible), part de **5 %** du poids du zombie vanilla (`UnearthedSpawns`, total des parts 13 % sur 35 %). **Escorte** : 2 à 4 sous-fifres créés dans `initialize` (spawn naturel, œuf ou commande), placés à 1,5-3 blocs. Brûle au soleil (comportement vanilla, à valider). Rendu provisoire : modèle vanilla agrandi de 15 % (`HordeChiefRenderer`).
+- **Ralliement** : pendant un combat (cible non nulle), toutes les 20 s (`RALLY_COOLDOWN_TICKS`, premier cri 5 s après l'apparition), il donne **Vitesse I et Résistance I pendant 8 s** aux autres membres de `unearthed_faction` dans **12 blocs** (zombies vanilla, villageois, lanceurs...), avec particules et grondement. **Les sous-fifres sont exclus.** Le bonus étant un effet de potion court, il s'éteint seul, y compris à la mort du chef (écart par rapport à « perdus à sa mort » : aucun suivi des bénéficiaires). Valeurs à régler en jeu.
+- **Sous-fifre** : 14 PV, épée en bois, dégâts du zombie vanilla (2,5 / 3 / 4,5 ; valeur provisoire de l'exception), jamais bébé, brûle au soleil. Il **suit son chef** (`FollowLeaderGoal` : le rejoint au-delà de 8 blocs, s'arrête à 4 ; UUID du chef en NBT `LeaderId`, retrouvé toutes les 20 ticks) et **reprend la cible du chef**. N'apparaît **jamais seul** dans la nature (pas d'entrée de spawn) ; œuf et `/summon` possibles. Rendu vanilla (`ZombieEntityRenderer`).
+- **Pas encore fait** : propriétaire / sous-fifre du joueur, item d'invocation (10 % du chef), inventaire et interface, modèles Blockbench, sons, `/zombie_expansion info` pour ces entités.
+
 #### Stats des exceptions
 
 1 cœur = 2 PV. Le zombie vanilla sert de référence : 20 PV, 2 points d'armure, dégâts finaux contre le joueur de 2,5 / 3 / 4,5 PV (Facile / Normal / Difficile).
@@ -326,7 +334,7 @@ Obtenu avec l'item d'invocation lâché par le chef de horde. L'item fonctionne 
   - augmenter le **nombre de sous-fifres invocables** en même temps (compteur par joueur, par exemple via l'Attachment API de Fabric) ;
   - améliorer le sous-fifre lui-même : plus de PV, plus de dégâts, etc. (modificateurs d'attributs stockés dans l'item).
 
-**À définir** : ce qui arrive à l'item si le sous-fifre meurt (item vide, item détruit, ou temps de recharge avant de pouvoir le réinvoquer) ; nombre d'emplacements de l'inventaire ; nom de l'item d'invocation ; valeurs des dégâts du bûcheron et du sous-fifre sauvage ; bonus exacts du chef de horde (légers, par impulsions avec temps de recharge, sans les sous-fifres) : durée, temps de recharge, rayon (ses propres stats sont fixées dans « Stats des exceptions »).
+**À définir** : ce qui arrive à l'item si le sous-fifre meurt (item vide, item détruit, ou temps de recharge avant de pouvoir le réinvoquer) ; nombre d'emplacements de l'inventaire ; nom de l'item d'invocation ; valeurs définitives des dégâts du bûcheron et du sous-fifre sauvage ; réglage en jeu des bonus du chef de horde (Vitesse I et Résistance I, 8 s, 20 s de recharge, 12 blocs).
 
 ## Items prévus
 

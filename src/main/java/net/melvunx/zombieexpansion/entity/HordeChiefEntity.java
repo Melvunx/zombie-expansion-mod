@@ -4,6 +4,14 @@ import net.melvunx.zombieexpansion.damage.DifficultyDamage;
 import net.melvunx.zombieexpansion.faction.Faction;
 import net.melvunx.zombieexpansion.registry.ModEntities;
 import net.minecraft.entity.EntityData;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.effect.StatusEffects;
+import net.minecraft.particle.ParticleTypes;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
+import net.minecraft.util.math.Box;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.attribute.DefaultAttributeContainer;
@@ -24,12 +32,25 @@ import org.jetbrains.annotations.Nullable;
  * zombie vanilla + 0,5 cœur (1 PV) à chaque difficulté. Ces dégâts ne peuvent pas venir de l'attribut
  * d'attaque (voir {@link DifficultyDamage}) : la classe de base {@link FixedDamageZombieEntity} les applique.
  *
+ * Ralliement : pendant un combat, il lance une impulsion (cri) qui donne un bonus léger et bref aux autres
+ * Déterrés proches, puis doit attendre. Ses sous-fifres n'en profitent pas : ils sont déjà sa troupe.
+ * Le bonus est un effet de potion de quelques secondes : il s'éteint de lui-même, y compris si le chef meurt.
+ *
  * Spawn : surface uniquement (voir {@link #canSpawn}). Il arrive avec une escorte de 2 à 4 sous-fifres
  * ({@link HordeMinionEntity}), créée dans {@link #initialize}.
  */
 public class HordeChiefEntity extends FixedDamageZombieEntity {
 	private static final double MAX_HEALTH = 30.0;
 	private static final double ARMOR = 3.0;
+	/** Rayon du cri, durée du bonus (8 s) et temps de recharge (20 s). Valeurs à régler en jeu. */
+	private static final double RALLY_RADIUS = 12.0;
+	private static final int RALLY_BONUS_TICKS = 160;
+	private static final int RALLY_COOLDOWN_TICKS = 400;
+	/** Délai avant la première impulsion après l'apparition. */
+	private static final int RALLY_FIRST_DELAY_TICKS = 100;
+
+	private int rallyCooldown = RALLY_FIRST_DELAY_TICKS;
+
 	/** Taille de l'escorte à l'apparition : 2 à 4 sous-fifres. */
 	private static final int MIN_ESCORT = 2;
 	private static final int MAX_ESCORT = 4;
@@ -92,6 +113,33 @@ public class HordeChiefEntity extends FixedDamageZombieEntity {
 		minion.initialize(world, difficulty, spawnReason, null);
 		minion.setLeader(this);
 		world.spawnEntityAndPassengers(minion);
+	}
+
+	@Override
+	public void tick() {
+		super.tick();
+		if (getWorld() instanceof ServerWorld serverWorld && --rallyCooldown <= 0 && getTarget() != null) {
+			rally(serverWorld);
+			rallyCooldown = RALLY_COOLDOWN_TICKS;
+		}
+	}
+
+	/**
+	 * Le cri de ralliement : Vitesse I et Résistance I pendant {@link #RALLY_BONUS_TICKS} ticks pour les autres
+	 * membres de la faction à portée (zombies vanilla, villageois, lanceurs...). Les sous-fifres sont exclus.
+	 * La faction se lit par tag (Faction.UNEARTHED), pas par instanceof ; seuls les sous-fifres sont écartés
+	 * explicitement, parce que c'est une règle propre au chef.
+	 */
+	private void rally(ServerWorld world) {
+		Box area = getBoundingBox().expand(RALLY_RADIUS);
+		for (LivingEntity ally : world.getEntitiesByClass(LivingEntity.class, area,
+			entity -> entity != this && !(entity instanceof HordeMinionEntity) && Faction.UNEARTHED.includes(entity.getType()))) {
+			ally.addStatusEffect(new StatusEffectInstance(StatusEffects.SPEED, RALLY_BONUS_TICKS, 0), this);
+			ally.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, RALLY_BONUS_TICKS, 0), this);
+		}
+		world.spawnParticles(ParticleTypes.ANGRY_VILLAGER, getX(), getEyeY() + 0.5, getZ(), 8, 0.4, 0.3, 0.4, 0.0);
+		// Un grondement grave, comme un cri de ralliement.
+		world.playSound(null, getX(), getY(), getZ(), SoundEvents.ENTITY_ZOMBIE_AMBIENT, SoundCategory.HOSTILE, 2.0f, 0.5f);
 	}
 
 	/** Un chef n'est jamais un bébé. */
