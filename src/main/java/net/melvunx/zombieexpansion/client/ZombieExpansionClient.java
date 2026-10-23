@@ -10,6 +10,7 @@ import net.melvunx.zombieexpansion.client.render.HordeChiefRenderer;
 import net.melvunx.zombieexpansion.client.render.ThrowerZombieRenderer;
 import net.melvunx.zombieexpansion.client.render.ThrownArmRenderer;
 import net.melvunx.zombieexpansion.registry.ModEntities;
+import net.minecraft.client.render.entity.ZombieEntityRenderer;
 
 /**
  * Point d'entrée client : n'est chargé que sur le client (jamais sur un serveur
@@ -23,6 +24,8 @@ public class ZombieExpansionClient implements ClientModInitializer {
 		EntityRendererRegistry.register(ModEntities.BLINDED_ZOMBIE, BlindedZombieRenderer::new);
 		EntityRendererRegistry.register(ModEntities.THROWER_ZOMBIE, ThrowerZombieRenderer::new);
 		EntityRendererRegistry.register(ModEntities.HORDE_CHIEF, HordeChiefRenderer::new);
+		// Rendu vanilla du zombie (épée en bois visible via le calque d'objet tenu), en attendant un modèle dédié.
+		EntityRendererRegistry.register(ModEntities.HORDE_MINION, ZombieEntityRenderer::new);
 		GluedOverlay.register();
 
 		EntityRendererRegistry.register(ModEntities.THROWN_ARM, ThrownArmRenderer::new);

@@ -32,6 +32,7 @@ public class ModEntityTypeTagProvider extends FabricTagProvider.EntityTypeTagPro
 			.add(EntityType.ZOMBIE)
 			.add(EntityType.ZOMBIE_VILLAGER)
 			.add(ModEntities.THROWER_ZOMBIE)
-			.add(ModEntities.HORDE_CHIEF);
+			.add(ModEntities.HORDE_CHIEF)
+			.add(ModEntities.HORDE_MINION);
 	}
 }

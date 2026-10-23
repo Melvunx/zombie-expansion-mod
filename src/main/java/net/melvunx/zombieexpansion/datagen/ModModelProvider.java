@@ -30,5 +30,6 @@ public class ModModelProvider extends FabricModelProvider {
 		generator.register(ModItems.BLINDED_ZOMBIE_SPAWN_EGG, SPAWN_EGG);
 		generator.register(ModItems.THROWER_ZOMBIE_SPAWN_EGG, SPAWN_EGG);
 		generator.register(ModItems.HORDE_CHIEF_SPAWN_EGG, SPAWN_EGG);
+		generator.register(ModItems.HORDE_MINION_SPAWN_EGG, SPAWN_EGG);
 	}
 }

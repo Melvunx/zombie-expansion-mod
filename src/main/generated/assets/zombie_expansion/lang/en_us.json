@@ -34,6 +34,7 @@
   "entity.zombie_expansion.blinded_zombie": "The Blinded",
   "entity.zombie_expansion.frozen_zombie": "Frozen Zombie",
   "entity.zombie_expansion.horde_chief": "Horde Chief",
+  "entity.zombie_expansion.horde_minion": "Horde Minion",
   "entity.zombie_expansion.thrower_zombie": "Thrower Zombie",
   "entity.zombie_expansion.thrown_arm": "Thrown Arm",
   "faction.zombie_expansion.abyss": "Abyss",
@@ -42,5 +43,6 @@
   "item.zombie_expansion.blinded_zombie_spawn_egg": "The Blinded Spawn Egg",
   "item.zombie_expansion.frozen_zombie_spawn_egg": "Frozen Zombie Spawn Egg",
   "item.zombie_expansion.horde_chief_spawn_egg": "Horde Chief Spawn Egg",
+  "item.zombie_expansion.horde_minion_spawn_egg": "Horde Minion Spawn Egg",
   "item.zombie_expansion.thrower_zombie_spawn_egg": "Thrower Zombie Spawn Egg"
 }
