@@ -142,6 +142,12 @@ public class HordeChiefEntity extends FixedDamageZombieEntity {
 		world.playSound(null, getX(), getY(), getZ(), SoundEvents.ENTITY_ZOMBIE_AMBIENT, SoundCategory.HOSTILE, 2.0f, 0.5f);
 	}
 
+	/** Un chef ne brûle pas au soleil : c'est un meneur à 30 PV, il ne doit pas mourir à l'aube. */
+	@Override
+	protected boolean burnsInDaylight() {
+		return false;
+	}
+
 	/** Un chef n'est jamais un bébé. */
 	@Override
 	public void setBaby(boolean baby) {
