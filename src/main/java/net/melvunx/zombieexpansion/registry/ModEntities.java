@@ -6,6 +6,7 @@ import net.melvunx.zombieexpansion.entity.BlindedZombieEntity;
 import net.melvunx.zombieexpansion.entity.FrozenZombieEntity;
 import net.melvunx.zombieexpansion.entity.HordeChiefEntity;
 import net.melvunx.zombieexpansion.entity.HordeMinionEntity;
+import net.melvunx.zombieexpansion.entity.RunnerZombieEntity;
 import net.melvunx.zombieexpansion.entity.ThrownArmEntity;
 import net.melvunx.zombieexpansion.entity.ThrowerZombieEntity;
 import net.minecraft.entity.Entity;
@@ -60,6 +61,13 @@ public final class ModEntities {
 			.maxTrackingRange(8)
 	);
 
+	public static final EntityType<RunnerZombieEntity> RUNNER_ZOMBIE = register(
+		"runner_zombie",
+		EntityType.Builder.create(RunnerZombieEntity::new, SpawnGroup.MONSTER)
+			.dimensions(0.6f, 1.95f)
+			.maxTrackingRange(8)
+	);
+
 	/** Projectile : groupe MISC (hors plafond de monstres), petite hitbox, suivi réseau court comme la boule de neige. */
 	public static final EntityType<ThrownArmEntity> THROWN_ARM = register(
 		"thrown_arm",
@@ -86,6 +94,7 @@ public final class ModEntities {
 		FabricDefaultAttributeRegistry.register(THROWER_ZOMBIE, ZombieEntity.createZombieAttributes());
 		FabricDefaultAttributeRegistry.register(HORDE_CHIEF, HordeChiefEntity.createAttributes());
 		FabricDefaultAttributeRegistry.register(HORDE_MINION, HordeMinionEntity.createAttributes());
+		FabricDefaultAttributeRegistry.register(RUNNER_ZOMBIE, RunnerZombieEntity.createAttributes());
 
 		// Où et quand le jeu a le droit de le faire apparaître (même emplacement que le zombie vanilla).
 		SpawnRestriction.register(FROZEN_ZOMBIE, SpawnLocationTypes.ON_GROUND,
@@ -94,6 +103,8 @@ public final class ModEntities {
 			Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, BlindedZombieEntity::canSpawn);
 		SpawnRestriction.register(THROWER_ZOMBIE, SpawnLocationTypes.ON_GROUND,
 			Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, ThrowerZombieEntity::canSpawn);
+		SpawnRestriction.register(RUNNER_ZOMBIE, SpawnLocationTypes.ON_GROUND,
+			Heightmap.Type.MOTION_BLOCKING_NO_LEAVES, RunnerZombieEntity::canSpawn);
 		// Le sous-fifre n'apparaît jamais seul dans la nature (c'est le chef qui l'amène) : pas de règle de spawn naturel,
 		// donc le jeu ne l'ajoutera à aucune liste ; l'œuf et /summon passent par la règle par défaut.
 		SpawnRestriction.register(HORDE_CHIEF, SpawnLocationTypes.ON_GROUND,

@@ -36,6 +36,11 @@ public final class ModItems {
 		new SpawnEggItem(ModEntities.HORDE_MINION, 0x5E7F4A, 0xC8A26A, new Item.Settings())
 	);
 
+	public static final SpawnEggItem RUNNER_ZOMBIE_SPAWN_EGG = register(
+		"runner_zombie_spawn_egg",
+		new SpawnEggItem(ModEntities.RUNNER_ZOMBIE, 0x5E7F4A, 0xD9D2A3, new Item.Settings())
+	);
+
 	private ModItems() {
 	}
 
@@ -52,6 +57,7 @@ public final class ModItems {
 				entries.add(THROWER_ZOMBIE_SPAWN_EGG);
 				entries.add(HORDE_CHIEF_SPAWN_EGG);
 				entries.add(HORDE_MINION_SPAWN_EGG);
+				entries.add(RUNNER_ZOMBIE_SPAWN_EGG);
 			});
 	}
 }

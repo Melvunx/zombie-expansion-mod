@@ -8,6 +8,7 @@ import net.melvunx.zombieexpansion.client.render.BlindedZombieRenderer;
 import net.melvunx.zombieexpansion.client.render.FrozenZombieRenderer;
 import net.melvunx.zombieexpansion.client.render.HordeChiefRenderer;
 import net.melvunx.zombieexpansion.client.render.HordeMinionRenderer;
+import net.melvunx.zombieexpansion.client.render.RunnerZombieRenderer;
 import net.melvunx.zombieexpansion.client.render.ThrowerZombieRenderer;
 import net.melvunx.zombieexpansion.client.render.ThrownArmRenderer;
 import net.melvunx.zombieexpansion.registry.ModEntities;
@@ -25,6 +26,7 @@ public class ZombieExpansionClient implements ClientModInitializer {
 		EntityRendererRegistry.register(ModEntities.THROWER_ZOMBIE, ThrowerZombieRenderer::new);
 		EntityRendererRegistry.register(ModEntities.HORDE_CHIEF, HordeChiefRenderer::new);
 		EntityRendererRegistry.register(ModEntities.HORDE_MINION, HordeMinionRenderer::new);
+		EntityRendererRegistry.register(ModEntities.RUNNER_ZOMBIE, RunnerZombieRenderer::new);
 		GluedOverlay.register();
 
 		EntityRendererRegistry.register(ModEntities.THROWN_ARM, ThrownArmRenderer::new);

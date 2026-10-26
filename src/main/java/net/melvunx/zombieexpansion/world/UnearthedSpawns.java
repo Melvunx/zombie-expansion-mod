@@ -42,7 +42,9 @@ public final class UnearthedSpawns {
 	private static final List<Member> MEMBERS = List.of(
 		new Member(ModEntities.THROWER_ZOMBIE, 0.08f, 1, 2),
 		// Rare : un chef n'apparaît qu'en surface (voir HordeChiefEntity#canSpawn) et amène sa troupe.
-		new Member(ModEntities.HORDE_CHIEF, 0.05f, 1, 1)
+		new Member(ModEntities.HORDE_CHIEF, 0.05f, 1, 1),
+		// Même part que le lanceur en attendant que tous les membres existent, pour régler les pourcentages d'un coup.
+		new Member(ModEntities.RUNNER_ZOMBIE, 0.08f, 1, 2)
 	);
 
 	private UnearthedSpawns() {

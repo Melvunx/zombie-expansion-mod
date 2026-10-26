@@ -28,6 +28,8 @@ public class ModEnglishLangProvider extends FabricLanguageProvider {
 		builder.add(ModEntities.THROWN_ARM, "Thrown Arm");
 		builder.add(ModEntities.HORDE_CHIEF, "Horde Chief");
 		builder.add(ModEntities.HORDE_MINION, "Horde Minion");
+		builder.add(ModEntities.RUNNER_ZOMBIE, "Runner");
+		builder.add(ModItems.RUNNER_ZOMBIE_SPAWN_EGG, "Runner Spawn Egg");
 		builder.add(ModItems.HORDE_MINION_SPAWN_EGG, "Horde Minion Spawn Egg");
 		builder.add(ModItems.HORDE_CHIEF_SPAWN_EGG, "Horde Chief Spawn Egg");
 		builder.add("death.attack.zombie_expansion.horde_attack", "%1$s was slain by %2$s");

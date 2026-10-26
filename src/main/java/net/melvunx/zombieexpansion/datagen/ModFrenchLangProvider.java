@@ -28,6 +28,8 @@ public class ModFrenchLangProvider extends FabricLanguageProvider {
 		builder.add(ModEntities.THROWN_ARM, "Bras lancé");
 		builder.add(ModEntities.HORDE_CHIEF, "Chef de horde");
 		builder.add(ModEntities.HORDE_MINION, "Sous-fifre");
+		builder.add(ModEntities.RUNNER_ZOMBIE, "Coureur");
+		builder.add(ModItems.RUNNER_ZOMBIE_SPAWN_EGG, "Œuf d'apparition de coureur");
 		builder.add(ModItems.HORDE_MINION_SPAWN_EGG, "Œuf d'apparition de sous-fifre");
 		builder.add(ModItems.HORDE_CHIEF_SPAWN_EGG, "Œuf d'apparition de chef de horde");
 		builder.add("death.attack.zombie_expansion.horde_attack", "%1$s a été tué par %2$s");
