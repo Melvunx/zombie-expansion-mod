@@ -4,6 +4,9 @@ import java.util.UUID;
 
 import net.melvunx.zombieexpansion.damage.DifficultyDamage;
 import net.melvunx.zombieexpansion.entity.ai.FollowLeaderGoal;
+import net.melvunx.zombieexpansion.registry.ModSounds;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvent;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityData;
 import net.minecraft.entity.EntityType;
@@ -20,6 +23,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.world.LocalDifficulty;
 import net.minecraft.world.ServerWorldAccess;
@@ -60,6 +64,18 @@ public class HordeMinionEntity extends FixedDamageZombieEntity implements GeoEnt
 
 	private static final TrackedData<Integer> VARIANT =
 		DataTracker.registerData(HordeMinionEntity.class, TrackedDataHandlerRegistry.INTEGER);
+	/**
+	 * Heure du monde (en ticks) où la lueur des tatouages s'éteint (0 = jamais allumée). On synchronise cette
+	 * heure une seule fois plutôt qu'un compteur à chaque tick : le client en déduit l'intensité (voir
+	 * {@link #getBoostGlow}).
+	 */
+	private static final TrackedData<Long> BOOST_GLOW_END =
+		DataTracker.registerData(HordeMinionEntity.class, TrackedDataHandlerRegistry.LONG);
+	/**
+	 * Durée de la lueur : celle du bonus du chef (8 s), la même sur le serveur et le client. Sert à calculer
+	 * la part restante (100 % au début, 0 % à la fin).
+	 */
+	private static final int BOOST_GLOW_TICKS = HordeChiefEntity.RALLY_BONUS_TICKS;
 	private static final String ATTACK_CONTROLLER = "attack";
 	private static final String BOOST_CONTROLLER = "boost";
 
@@ -82,10 +98,24 @@ public class HordeMinionEntity extends FixedDamageZombieEntity implements GeoEnt
 	protected void initDataTracker(DataTracker.Builder builder) {
 		super.initDataTracker(builder);
 		builder.add(VARIANT, 0);
+		builder.add(BOOST_GLOW_END, 0L);
 	}
 
 	public HordeMinionVariant getVariant() {
 		return HordeMinionVariant.byOrdinal(getDataTracker().get(VARIANT));
+	}
+
+	/**
+	 * Intensité de la lueur des tatouages, de 1 (début du boost du chef) à 0 (fin), de façon linéaire.
+	 * Calculée côté client à partir de l'heure de fin synchronisée ; {@code partialTick} lisse l'image entre deux ticks.
+	 */
+	public float getBoostGlow(float partialTick) {
+		long end = getDataTracker().get(BOOST_GLOW_END);
+		if (end == 0L) {
+			return 0.0f;
+		}
+		float remaining = end - (getWorld().getTime() + partialTick);
+		return MathHelper.clamp(remaining / BOOST_GLOW_TICKS, 0.0f, 1.0f);
 	}
 
 	public void setVariant(HordeMinionVariant variant) {
@@ -129,18 +159,37 @@ public class HordeMinionEntity extends FixedDamageZombieEntity implements GeoEnt
 		goalSelector.add(6, new FollowLeaderGoal(this));
 	}
 
+	// ----- Sons -----
+
+	/** Chaque variante a sa voix (grognement, ricanement, gloussement) ; blessure et mort restent ceux du zombie. */
+	@Override
+	protected SoundEvent getAmbientSound() {
+		return ModSounds.minion(getVariant(), "ambient");
+	}
+
+	private void playVariantSound(String action) {
+		getWorld().playSound(null, getX(), getY(), getZ(), ModSounds.minion(getVariant(), action), SoundCategory.HOSTILE,
+			1.0f, 0.9f + random.nextFloat() * 0.2f);
+	}
+
 	// ----- Animations -----
 
 	/** Coup de mêlée : l'animation d'attaque de la variante démarre en même temps que les dégâts. */
 	@Override
 	public boolean tryAttack(Entity target) {
 		triggerAnim(ATTACK_CONTROLLER, getVariant().trigger("attack"));
+		playVariantSound("attack");
 		return super.tryAttack(target);
 	}
 
-	/** Petit sursaut visuel quand le chef pousse son cri (aucun effet de jeu : les sous-fifres sont exclus du ralliement). */
+	/**
+	 * Réaction visuelle au cri du chef (aucun effet de jeu : les sous-fifres sont exclus du ralliement) : petite
+	 * animation, puis les tatouages s'allument à 100 % et s'éteignent linéairement pendant toute la durée du bonus du chef.
+	 */
 	public void playBoost() {
 		triggerAnim(BOOST_CONTROLLER, getVariant().trigger("boost"));
+		playVariantSound("boost");
+		getDataTracker().set(BOOST_GLOW_END, getWorld().getTime() + BOOST_GLOW_TICKS);
 	}
 
 	/** La pose de fond (marche, repos) puis deux contrôleurs ponctuels, un par action, avec une animation par variante. */

@@ -2,6 +2,7 @@ package net.melvunx.zombieexpansion.client.render;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.melvunx.zombieexpansion.ZombieExpansion;
 import net.melvunx.zombieexpansion.client.model.HordeMinionModel;
 import net.melvunx.zombieexpansion.entity.HordeMinionEntity;
 import net.minecraft.client.render.entity.EntityRendererFactory;
@@ -15,6 +16,10 @@ import software.bernie.geckolib.renderer.layer.BlockAndItemGeoLayer;
  * Renderer GeckoLib du sous-fifre : 15 % plus petit que le zombie vanilla (la hitbox de l'EntityType suit).
  * Le calque d'objet tenu dessine l'arme de la main principale (l'épée en bois) sur l'os « right_hand_item »
  * du modèle, qui suit donc le bras droit pendant les animations.
+ *
+ * Calque lumineux ({@link EmissiveOverlayLayer}) : une texture « horde_minion_<variante>_glowing.png » par variante,
+ * avec les seuls pixels de tatouage dans leur couleur vive. Le sous-fifre ne s'allume que pendant le boost du
+ * chef, de 100 % à 0 % de façon linéaire ({@code getBoostGlow}) ; le chef, lui, brille en permanence.
  */
 @Environment(EnvType.CLIENT)
 public class HordeMinionRenderer extends GeoEntityRenderer<HordeMinionEntity> {
@@ -24,6 +29,8 @@ public class HordeMinionRenderer extends GeoEntityRenderer<HordeMinionEntity> {
 	public HordeMinionRenderer(EntityRendererFactory.Context context) {
 		super(context, new HordeMinionModel());
 		withScale(SCALE);
+		addRenderLayer(new EmissiveOverlayLayer<>(this, HordeMinionEntity::getBoostGlow,
+			entity -> ZombieExpansion.id("textures/entity/unearthed/horde_minion_" + entity.getVariant().id() + "_glowing.png")));
 		addRenderLayer(new BlockAndItemGeoLayer<>(this) {
 			@Override
 			protected ItemStack getStackForBone(GeoBone bone, HordeMinionEntity entity) {

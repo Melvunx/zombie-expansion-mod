@@ -3,6 +3,8 @@ package net.melvunx.zombieexpansion.entity;
 import net.melvunx.zombieexpansion.damage.DifficultyDamage;
 import net.melvunx.zombieexpansion.faction.Faction;
 import net.melvunx.zombieexpansion.registry.ModEntities;
+import net.melvunx.zombieexpansion.registry.ModSounds;
+import net.minecraft.sound.SoundEvent;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityData;
 import net.minecraft.entity.EquipmentSlot;
@@ -13,7 +15,6 @@ import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.Box;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnReason;
@@ -58,7 +59,7 @@ public class HordeChiefEntity extends FixedDamageZombieEntity implements GeoEnti
 	private static final double ARMOR = 3.0;
 	/** Rayon du cri, durée du bonus (8 s) et temps de recharge (20 s). Valeurs à régler en jeu. */
 	private static final double RALLY_RADIUS = 12.0;
-	private static final int RALLY_BONUS_TICKS = 160;
+	static final int RALLY_BONUS_TICKS = 160;
 	private static final int RALLY_COOLDOWN_TICKS = 400;
 	/** Délai avant la première impulsion après l'apparition. */
 	private static final int RALLY_FIRST_DELAY_TICKS = 100;
@@ -180,8 +181,8 @@ public class HordeChiefEntity extends FixedDamageZombieEntity implements GeoEnti
 			minion.playBoost();
 		}
 		world.spawnParticles(ParticleTypes.ANGRY_VILLAGER, getX(), getEyeY() + 0.5, getZ(), 8, 0.4, 0.3, 0.4, 0.0);
-		// Un grondement grave, comme un cri de ralliement.
-		world.playSound(null, getX(), getY(), getZ(), SoundEvents.ENTITY_ZOMBIE_AMBIENT, SoundCategory.HOSTILE, 2.0f, 0.5f);
+		// Le cri de ralliement (audible de loin, d'où le volume de 2).
+		world.playSound(null, getX(), getY(), getZ(), ModSounds.HORDE_CHIEF_BOOST, SoundCategory.HOSTILE, 2.0f, 1.0f);
 	}
 
 	/** Le modèle n'affiche aucun équipement : on évite une armure invisible mais active. */
@@ -194,10 +195,17 @@ public class HordeChiefEntity extends FixedDamageZombieEntity implements GeoEnti
 	protected void initEquipment(Random random, LocalDifficulty localDifficulty) {
 	}
 
+	/** Grondement au repos, à la place du gémissement du zombie vanilla (blessure et mort restent ceux du zombie). */
+	@Override
+	protected SoundEvent getAmbientSound() {
+		return ModSounds.HORDE_CHIEF_AMBIENT;
+	}
+
 	/** Un coup de mêlée : l'animation démarre en même temps que les dégâts (le coup visuel arrive à 0,3 s). */
 	@Override
 	public boolean tryAttack(Entity target) {
 		triggerAnim(ATTACK_CONTROLLER, ATTACK_CONTROLLER);
+		getWorld().playSound(null, getX(), getY(), getZ(), ModSounds.HORDE_CHIEF_ATTACK, SoundCategory.HOSTILE, 1.0f, 0.9f + random.nextFloat() * 0.2f);
 		return super.tryAttack(target);
 	}
 
