@@ -11,14 +11,14 @@ import software.bernie.geckolib.renderer.GeoEntityRenderer;
 /**
  * Renderer GeckoLib du zombie aveugle. L'identifiant « the_blinded » (nom des fichiers exportés
  * depuis Blockbench) donne les trois chemins :
- *   - geo/entity/the_blinded.geo.json
- *   - textures/entity/the_blinded.png
- *   - animations/entity/the_blinded.animation.json
+ *   - geo/entity/abyss/the_blinded.geo.json
+ *   - textures/entity/abyss/the_blinded.png
+ *   - animations/entity/abyss/the_blinded.animation.json
  */
 @Environment(EnvType.CLIENT)
 public class BlindedZombieRenderer extends GeoEntityRenderer<BlindedZombieEntity> {
 	public BlindedZombieRenderer(EntityRendererFactory.Context context) {
 		// true = le bone « head » suit le regard (inutile pour un aveugle mais cohérent avec le zombie gelé).
-		super(context, new DefaultedEntityGeoModel<>(ZombieExpansion.id("the_blinded"), true));
+		super(context, new DefaultedEntityGeoModel<>(ZombieExpansion.id("abyss/the_blinded"), true));
 	}
 }

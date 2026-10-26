@@ -17,12 +17,12 @@ import software.bernie.geckolib.model.DefaultedEntityGeoModel;
  */
 @Environment(EnvType.CLIENT)
 public class FrozenZombieModel extends DefaultedEntityGeoModel<FrozenZombieEntity> {
-	private static final Identifier ADULT_ANIMATIONS = ZombieExpansion.id("animations/entity/frozen_zombie.animation.json");
-	private static final Identifier BABY_ANIMATIONS = ZombieExpansion.id("animations/entity/baby_frozen_zombie.animation.json");
+	private static final Identifier ADULT_ANIMATIONS = ZombieExpansion.id("animations/entity/frost/frozen_zombie.animation.json");
+	private static final Identifier BABY_ANIMATIONS = ZombieExpansion.id("animations/entity/frost/baby_frozen_zombie.animation.json");
 
 	public FrozenZombieModel() {
 		// true = le bone nommé "head" suit la direction du regard de l'entité.
-		super(ZombieExpansion.id("frozen_zombie"), true);
+		super(ZombieExpansion.id("frost/frozen_zombie"), true);
 	}
 
 	@Override

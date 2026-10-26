@@ -17,7 +17,7 @@ import software.bernie.geckolib.renderer.GeoEntityRenderer;
 @Environment(EnvType.CLIENT)
 public class ThrownArmRenderer extends GeoEntityRenderer<ThrownArmEntity> {
 	public ThrownArmRenderer(EntityRendererFactory.Context context) {
-		super(context, new DefaultedEntityGeoModel<>(ZombieExpansion.id("thrown_arm")));
+		super(context, new DefaultedEntityGeoModel<>(ZombieExpansion.id("unearthed/thrown_arm")));
 	}
 
 	/**

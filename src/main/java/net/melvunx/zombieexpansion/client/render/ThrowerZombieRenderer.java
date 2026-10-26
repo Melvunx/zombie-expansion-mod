@@ -14,8 +14,8 @@ import software.bernie.geckolib.renderer.GeoEntityRenderer;
 
 /**
  * Renderer GeckoLib du zombie lanceur. L'identifiant « thrower_zombie » donne les trois chemins :
- * geo/entity/thrower_zombie.geo.json, textures/entity/thrower_zombie.png et
- * animations/entity/thrower_zombie.animation.json.
+ * geo/entity/unearthed/thrower_zombie.geo.json, textures/entity/unearthed/thrower_zombie.png et
+ * animations/entity/unearthed/thrower_zombie.animation.json.
  *
  * Limite : pas de calque d'armure ni d'objet tenu (le modèle n'a pas les os attendus par les calques
  * GeckoLib) ; un zombie lanceur qui ramasse un équipement ne l'affiche donc pas.
@@ -25,7 +25,7 @@ public class ThrowerZombieRenderer extends GeoEntityRenderer<ThrowerZombieEntity
 	private static final String ARM_BONE = "right_arm";
 
 	public ThrowerZombieRenderer(EntityRendererFactory.Context context) {
-		super(context, new DefaultedEntityGeoModel<>(ZombieExpansion.id("thrower_zombie"), true));
+		super(context, new DefaultedEntityGeoModel<>(ZombieExpansion.id("unearthed/thrower_zombie"), true));
 	}
 
 	/**
