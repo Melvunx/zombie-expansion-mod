@@ -44,5 +44,17 @@
   "item.zombie_expansion.frozen_zombie_spawn_egg": "Frozen Zombie Spawn Egg",
   "item.zombie_expansion.horde_chief_spawn_egg": "Horde Chief Spawn Egg",
   "item.zombie_expansion.horde_minion_spawn_egg": "Horde Minion Spawn Egg",
-  "item.zombie_expansion.thrower_zombie_spawn_egg": "Thrower Zombie Spawn Egg"
+  "item.zombie_expansion.thrower_zombie_spawn_egg": "Thrower Zombie Spawn Egg",
+  "subtitles.zombie_expansion.entity.horde_chief.ambient": "Horde Chief growls",
+  "subtitles.zombie_expansion.entity.horde_chief.attack": "Horde Chief roars",
+  "subtitles.zombie_expansion.entity.horde_chief.boost": "Horde Chief rallies the horde",
+  "subtitles.zombie_expansion.entity.horde_minion.cross_eyed.ambient": "Horde Minion giggles",
+  "subtitles.zombie_expansion.entity.horde_minion.cross_eyed.attack": "Horde Minion yelps",
+  "subtitles.zombie_expansion.entity.horde_minion.cross_eyed.boost": "Horde Minion squeals",
+  "subtitles.zombie_expansion.entity.horde_minion.dopey.ambient": "Horde Minion groans",
+  "subtitles.zombie_expansion.entity.horde_minion.dopey.attack": "Horde Minion grunts",
+  "subtitles.zombie_expansion.entity.horde_minion.dopey.boost": "Horde Minion mumbles",
+  "subtitles.zombie_expansion.entity.horde_minion.toothy.ambient": "Horde Minion snickers",
+  "subtitles.zombie_expansion.entity.horde_minion.toothy.attack": "Horde Minion yells",
+  "subtitles.zombie_expansion.entity.horde_minion.toothy.boost": "Horde Minion cheers"
 }

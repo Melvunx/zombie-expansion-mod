@@ -6,6 +6,7 @@ import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricLanguageProvider;
 import net.melvunx.zombieexpansion.registry.ModEntities;
 import net.melvunx.zombieexpansion.registry.ModItems;
+import net.melvunx.zombieexpansion.registry.ModSounds;
 import net.minecraft.registry.RegistryWrapper;
 
 /** Génère assets/zombie_expansion/lang/fr_fr.json. */
@@ -16,6 +17,9 @@ public class ModFrenchLangProvider extends FabricLanguageProvider {
 
 	@Override
 	public void generateTranslations(RegistryWrapper.WrapperLookup registryLookup, TranslationBuilder builder) {
+		for (ModSounds.Entry sound : ModSounds.ENTRIES) {
+			builder.add(sound.subtitleKey(), sound.fr());
+		}
 		builder.add(ModEntities.FROZEN_ZOMBIE, "Zombie gelé");
 		builder.add(ModEntities.BLINDED_ZOMBIE, "Zombie aveugle");
 		builder.add(ModItems.BLINDED_ZOMBIE_SPAWN_EGG, "Œuf d'apparition de zombie aveugle");

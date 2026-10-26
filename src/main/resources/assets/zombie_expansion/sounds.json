@@ -1,0 +1,74 @@
+{
+	"entity.horde_chief.ambient": {
+		"sounds": [
+			"zombie_expansion:entity/unearthed/horde_chief/ambient"
+		],
+		"subtitle": "subtitles.zombie_expansion.entity.horde_chief.ambient"
+	},
+	"entity.horde_chief.attack": {
+		"sounds": [
+			"zombie_expansion:entity/unearthed/horde_chief/attack"
+		],
+		"subtitle": "subtitles.zombie_expansion.entity.horde_chief.attack"
+	},
+	"entity.horde_chief.boost": {
+		"sounds": [
+			"zombie_expansion:entity/unearthed/horde_chief/boost"
+		],
+		"subtitle": "subtitles.zombie_expansion.entity.horde_chief.boost"
+	},
+	"entity.horde_minion.dopey.ambient": {
+		"sounds": [
+			"zombie_expansion:entity/unearthed/horde_minion/dopey/ambient"
+		],
+		"subtitle": "subtitles.zombie_expansion.entity.horde_minion.dopey.ambient"
+	},
+	"entity.horde_minion.dopey.attack": {
+		"sounds": [
+			"zombie_expansion:entity/unearthed/horde_minion/dopey/attack"
+		],
+		"subtitle": "subtitles.zombie_expansion.entity.horde_minion.dopey.attack"
+	},
+	"entity.horde_minion.dopey.boost": {
+		"sounds": [
+			"zombie_expansion:entity/unearthed/horde_minion/dopey/boost"
+		],
+		"subtitle": "subtitles.zombie_expansion.entity.horde_minion.dopey.boost"
+	},
+	"entity.horde_minion.cross_eyed.ambient": {
+		"sounds": [
+			"zombie_expansion:entity/unearthed/horde_minion/cross_eyed/ambient"
+		],
+		"subtitle": "subtitles.zombie_expansion.entity.horde_minion.cross_eyed.ambient"
+	},
+	"entity.horde_minion.cross_eyed.attack": {
+		"sounds": [
+			"zombie_expansion:entity/unearthed/horde_minion/cross_eyed/attack"
+		],
+		"subtitle": "subtitles.zombie_expansion.entity.horde_minion.cross_eyed.attack"
+	},
+	"entity.horde_minion.cross_eyed.boost": {
+		"sounds": [
+			"zombie_expansion:entity/unearthed/horde_minion/cross_eyed/boost"
+		],
+		"subtitle": "subtitles.zombie_expansion.entity.horde_minion.cross_eyed.boost"
+	},
+	"entity.horde_minion.toothy.ambient": {
+		"sounds": [
+			"zombie_expansion:entity/unearthed/horde_minion/toothy/ambient"
+		],
+		"subtitle": "subtitles.zombie_expansion.entity.horde_minion.toothy.ambient"
+	},
+	"entity.horde_minion.toothy.attack": {
+		"sounds": [
+			"zombie_expansion:entity/unearthed/horde_minion/toothy/attack"
+		],
+		"subtitle": "subtitles.zombie_expansion.entity.horde_minion.toothy.attack"
+	},
+	"entity.horde_minion.toothy.boost": {
+		"sounds": [
+			"zombie_expansion:entity/unearthed/horde_minion/toothy/boost"
+		],
+		"subtitle": "subtitles.zombie_expansion.entity.horde_minion.toothy.boost"
+	}
+}

@@ -44,5 +44,17 @@
   "item.zombie_expansion.frozen_zombie_spawn_egg": "Œuf d'apparition de zombie gelé",
   "item.zombie_expansion.horde_chief_spawn_egg": "Œuf d'apparition de chef de horde",
   "item.zombie_expansion.horde_minion_spawn_egg": "Œuf d'apparition de sous-fifre",
-  "item.zombie_expansion.thrower_zombie_spawn_egg": "Œuf d'apparition de zombie lanceur"
+  "item.zombie_expansion.thrower_zombie_spawn_egg": "Œuf d'apparition de zombie lanceur",
+  "subtitles.zombie_expansion.entity.horde_chief.ambient": "Le chef de horde gronde",
+  "subtitles.zombie_expansion.entity.horde_chief.attack": "Le chef de horde rugit",
+  "subtitles.zombie_expansion.entity.horde_chief.boost": "Le chef de horde rallie la horde",
+  "subtitles.zombie_expansion.entity.horde_minion.cross_eyed.ambient": "Le sous-fifre ricane",
+  "subtitles.zombie_expansion.entity.horde_minion.cross_eyed.attack": "Le sous-fifre glapit",
+  "subtitles.zombie_expansion.entity.horde_minion.cross_eyed.boost": "Le sous-fifre couine",
+  "subtitles.zombie_expansion.entity.horde_minion.dopey.ambient": "Le sous-fifre gémit",
+  "subtitles.zombie_expansion.entity.horde_minion.dopey.attack": "Le sous-fifre grogne",
+  "subtitles.zombie_expansion.entity.horde_minion.dopey.boost": "Le sous-fifre marmonne",
+  "subtitles.zombie_expansion.entity.horde_minion.toothy.ambient": "Le sous-fifre glousse",
+  "subtitles.zombie_expansion.entity.horde_minion.toothy.attack": "Le sous-fifre crie",
+  "subtitles.zombie_expansion.entity.horde_minion.toothy.boost": "Le sous-fifre exulte"
 }
