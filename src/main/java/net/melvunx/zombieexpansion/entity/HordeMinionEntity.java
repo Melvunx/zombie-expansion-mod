@@ -19,12 +19,15 @@ import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.data.TrackedData;
 import net.minecraft.entity.data.TrackedDataHandlerRegistry;
 import net.minecraft.entity.mob.ZombieEntity;
+import net.minecraft.entity.mob.MobEntity;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.random.Random;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.LocalDifficulty;
 import net.minecraft.world.ServerWorldAccess;
 import net.minecraft.world.World;
@@ -59,6 +62,10 @@ public class HordeMinionEntity extends FixedDamageZombieEntity implements GeoEnt
 	private static final double MAX_HEALTH = 14.0;
 	/** Mêmes dégâts que le zombie vanilla : 2,5 / 3 / 4,5 PV. */
 	private static final DifficultyDamage.Table DAMAGE = new DifficultyDamage.Table(2.5f, 3.0f, 4.5f);
+	/** Chance de base d'avoir une armure (comme le zombie vanilla), multipliée par la difficulté locale. */
+	private static final float ARMOR_CHANCE = 0.15f;
+	/** Niveau d'équipement de MobEntity#getEquipmentForSlot : 0 cuir, 1 or, 2 mailles, 3 fer, 4 diamant. */
+	private static final int CHAINMAIL_LEVEL = 2;
 	/** Fréquence (en ticks) à laquelle il retrouve son chef et recopie sa cible. */
 	private static final int LEADER_CHECK_TICKS = 20;
 
@@ -132,17 +139,51 @@ public class HordeMinionEntity extends FixedDamageZombieEntity implements GeoEnt
 		super.setBaby(false);
 	}
 
-	/** Toujours l'épée en bois, jamais l'équipement aléatoire du zombie vanilla. */
+	/**
+	 * Toujours l'épée en bois, et parfois une armure en mailles.
+	 *
+	 * Le tirage de l'armure est celui de MobEntity#initEquipment (zombie, squelette) : même probabilité
+	 * (15 % × difficulté locale) et même façon de s'arrêter au fil des pièces (bottes d'abord, puis jambières,
+	 * plastron, casque). Seule différence : le niveau est fixé aux mailles, sans les paliers aléatoires.
+	 *
+	 * L'enchantement n'est pas à faire ici : ZombieEntity#initialize appelle ensuite updateEnchantments, le
+	 * même système que pour le zombie et le squelette (arme 25 %, chaque pièce 50 %, × difficulté locale).
+	 * Les chances de lâcher l'équipement à la mort (8,5 %, améliorées par Butin) sont celles par défaut de
+	 * tout mob : l'épée en bois tombe donc comme celle d'un squelette, seulement si un joueur l'a tué.
+	 */
 	@Override
 	protected void initEquipment(Random random, LocalDifficulty localDifficulty) {
 		equipStack(EquipmentSlot.MAINHAND, new ItemStack(Items.WOODEN_SWORD));
+
+		if (random.nextFloat() < ARMOR_CHANCE * localDifficulty.getClampedLocalDifficulty()) {
+			float continueChance = getWorld().getDifficulty() == Difficulty.HARD ? 0.1f : 0.25f;
+			boolean first = true;
+			for (EquipmentSlot slot : EquipmentSlot.values()) {
+				if (slot.getType() != EquipmentSlot.Type.HUMANOID_ARMOR) {
+					continue;
+				}
+				if (!first && random.nextFloat() < continueChance) {
+					break;
+				}
+				first = false;
+				if (getEquippedStack(slot).isEmpty()) {
+					Item piece = MobEntity.getEquipmentForSlot(slot, CHAINMAIL_LEVEL);
+					if (piece != null) {
+						equipStack(slot, new ItemStack(piece));
+					}
+				}
+			}
+		}
 	}
 
 	@Override
 	public EntityData initialize(ServerWorldAccess world, LocalDifficulty difficulty, SpawnReason spawnReason, @Nullable EntityData entityData) {
 		EntityData data = super.initialize(world, difficulty, spawnReason, entityData);
-		// ZombieEntity#initialize a posé notre épée (initEquipment) mais peut avoir ajouté une citrouille d'Halloween.
-		equipStack(EquipmentSlot.HEAD, ItemStack.EMPTY);
+		// ZombieEntity#initialize ajoute une citrouille d'Halloween si la tête est vide : on la retire, mais on garde un casque en mailles.
+		ItemStack head = getEquippedStack(EquipmentSlot.HEAD);
+		if (head.isOf(Items.CARVED_PUMPKIN) || head.isOf(Items.JACK_O_LANTERN)) {
+			equipStack(EquipmentSlot.HEAD, ItemStack.EMPTY);
+		}
 		setVariant(HordeMinionVariant.byOrdinal(random.nextInt(HordeMinionVariant.values().length)));
 		return data;
 	}
