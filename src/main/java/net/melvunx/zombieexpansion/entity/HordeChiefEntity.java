@@ -3,7 +3,10 @@ package net.melvunx.zombieexpansion.entity;
 import net.melvunx.zombieexpansion.damage.DifficultyDamage;
 import net.melvunx.zombieexpansion.faction.Faction;
 import net.melvunx.zombieexpansion.registry.ModEntities;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityData;
+import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.item.ItemStack;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
@@ -24,6 +27,14 @@ import net.minecraft.world.LocalDifficulty;
 import net.minecraft.world.ServerWorldAccess;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
+import software.bernie.geckolib.animatable.GeoEntity;
+import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animation.AnimatableManager;
+import software.bernie.geckolib.animation.AnimationController;
+import software.bernie.geckolib.animation.AnimationState;
+import software.bernie.geckolib.animation.PlayState;
+import software.bernie.geckolib.animation.RawAnimation;
+import software.bernie.geckolib.util.GeckoLibUtil;
 
 /**
  * Chef de horde : le « général » des Déterrés (ce n'est pas un boss : pas de barre de vie).
@@ -38,8 +49,11 @@ import org.jetbrains.annotations.Nullable;
  *
  * Spawn : surface uniquement (voir {@link #canSpawn}). Il arrive avec une escorte de 2 à 4 sous-fifres
  * ({@link HordeMinionEntity}), créée dans {@link #initialize}.
+ *
+ * Rendu GeckoLib (horde_chief.*) : idle, walk, attack (sur chaque coup) et boost (sur chaque cri de ralliement).
+ * Le modèle ne montre ni armure ni objet tenu : le chef ne ramasse rien et n'a aucun équipement.
  */
-public class HordeChiefEntity extends FixedDamageZombieEntity {
+public class HordeChiefEntity extends FixedDamageZombieEntity implements GeoEntity {
 	private static final double MAX_HEALTH = 30.0;
 	private static final double ARMOR = 3.0;
 	/** Rayon du cri, durée du bonus (8 s) et temps de recharge (20 s). Valeurs à régler en jeu. */
@@ -49,7 +63,21 @@ public class HordeChiefEntity extends FixedDamageZombieEntity {
 	/** Délai avant la première impulsion après l'apparition. */
 	private static final int RALLY_FIRST_DELAY_TICKS = 100;
 
+	// Noms définis dans horde_chief.animation.json.
+	private static final RawAnimation IDLE = RawAnimation.begin().thenLoop("animation.horde_chief.idle");
+	private static final RawAnimation WALK = RawAnimation.begin().thenLoop("animation.horde_chief.walk");
+	private static final RawAnimation ATTACK = RawAnimation.begin().thenPlay("animation.horde_chief.attack");
+	private static final RawAnimation BOOST = RawAnimation.begin().thenPlay("animation.horde_chief.boost");
+	private static final String ATTACK_CONTROLLER = "attack";
+	private static final String BOOST_CONTROLLER = "boost";
+	/** Le cri part à ~0,4 s dans l'animation boost : 8 ticks après son début. */
+	private static final int RALLY_RELEASE_TICKS = 8;
+
+	private final AnimatableInstanceCache geoCache = GeckoLibUtil.createInstanceCache(this);
+
 	private int rallyCooldown = RALLY_FIRST_DELAY_TICKS;
+	/** Décompte entre le début de l'animation boost et l'effet du cri (0 = pas de cri en cours). */
+	private int rallyReleaseTicks;
 
 	/** Taille de l'escorte à l'apparition : 2 à 4 sous-fifres. */
 	private static final int MIN_ESCORT = 2;
@@ -87,6 +115,7 @@ public class HordeChiefEntity extends FixedDamageZombieEntity {
 	@Override
 	public EntityData initialize(ServerWorldAccess world, LocalDifficulty difficulty, SpawnReason spawnReason, @Nullable EntityData entityData) {
 		EntityData data = super.initialize(world, difficulty, spawnReason, entityData);
+		equipStack(EquipmentSlot.HEAD, ItemStack.EMPTY);
 		int count = MIN_ESCORT + random.nextInt(MAX_ESCORT - MIN_ESCORT + 1);
 		for (int i = 0; i < count; i++) {
 			spawnMinion(world, difficulty, spawnReason);
@@ -118,8 +147,17 @@ public class HordeChiefEntity extends FixedDamageZombieEntity {
 	@Override
 	public void tick() {
 		super.tick();
-		if (getWorld() instanceof ServerWorld serverWorld && --rallyCooldown <= 0 && getTarget() != null) {
-			rally(serverWorld);
+		if (!(getWorld() instanceof ServerWorld serverWorld)) {
+			return;
+		}
+		if (rallyReleaseTicks > 0) {
+			// L'animation a démarré : l'effet du cri tombe quand le chef pousse son cri.
+			if (--rallyReleaseTicks == 0) {
+				rally(serverWorld);
+			}
+		} else if (--rallyCooldown <= 0 && getTarget() != null) {
+			triggerAnim(BOOST_CONTROLLER, BOOST_CONTROLLER);
+			rallyReleaseTicks = RALLY_RELEASE_TICKS;
 			rallyCooldown = RALLY_COOLDOWN_TICKS;
 		}
 	}
@@ -137,9 +175,49 @@ public class HordeChiefEntity extends FixedDamageZombieEntity {
 			ally.addStatusEffect(new StatusEffectInstance(StatusEffects.SPEED, RALLY_BONUS_TICKS, 0), this);
 			ally.addStatusEffect(new StatusEffectInstance(StatusEffects.RESISTANCE, RALLY_BONUS_TICKS, 0), this);
 		}
+		// Les sous-fifres ne reçoivent aucun bonus, mais ils réagissent au cri (animation seulement).
+		for (HordeMinionEntity minion : world.getEntitiesByClass(HordeMinionEntity.class, area, minion -> minion.getLeader() == this)) {
+			minion.playBoost();
+		}
 		world.spawnParticles(ParticleTypes.ANGRY_VILLAGER, getX(), getEyeY() + 0.5, getZ(), 8, 0.4, 0.3, 0.4, 0.0);
 		// Un grondement grave, comme un cri de ralliement.
 		world.playSound(null, getX(), getY(), getZ(), SoundEvents.ENTITY_ZOMBIE_AMBIENT, SoundCategory.HOSTILE, 2.0f, 0.5f);
+	}
+
+	/** Le modèle n'affiche aucun équipement : on évite une armure invisible mais active. */
+	@Override
+	public boolean canGather(ItemStack stack) {
+		return false;
+	}
+
+	@Override
+	protected void initEquipment(Random random, LocalDifficulty localDifficulty) {
+	}
+
+	/** Un coup de mêlée : l'animation démarre en même temps que les dégâts (le coup visuel arrive à 0,3 s). */
+	@Override
+	public boolean tryAttack(Entity target) {
+		triggerAnim(ATTACK_CONTROLLER, ATTACK_CONTROLLER);
+		return super.tryAttack(target);
+	}
+
+	/** La pose de fond (marche, repos), puis attaque et boost qui la recouvrent le temps de leur animation. */
+	@Override
+	public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
+		controllers.add(new AnimationController<>(this, "movement", 5, this::movementPredicate));
+		controllers.add(new AnimationController<>(this, ATTACK_CONTROLLER, 0, state -> PlayState.STOP)
+			.triggerableAnim(ATTACK_CONTROLLER, ATTACK));
+		controllers.add(new AnimationController<>(this, BOOST_CONTROLLER, 0, state -> PlayState.STOP)
+			.triggerableAnim(BOOST_CONTROLLER, BOOST));
+	}
+
+	private PlayState movementPredicate(AnimationState<HordeChiefEntity> state) {
+		return state.setAndContinue(state.isMoving() ? WALK : IDLE);
+	}
+
+	@Override
+	public AnimatableInstanceCache getAnimatableInstanceCache() {
+		return geoCache;
 	}
 
 	/** Un chef ne brûle pas au soleil : c'est un meneur à 30 PV, il ne doit pas mourir à l'aube. */

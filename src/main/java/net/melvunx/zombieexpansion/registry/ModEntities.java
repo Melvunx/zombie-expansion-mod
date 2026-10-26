@@ -49,14 +49,14 @@ public final class ModEntities {
 	public static final EntityType<HordeChiefEntity> HORDE_CHIEF = register(
 		"horde_chief",
 		EntityType.Builder.create(HordeChiefEntity::new, SpawnGroup.MONSTER)
-			.dimensions(0.6f, 1.95f)
+			.dimensions(0.66f, 2.15f) // zombie vanilla + 10 %, comme l'échelle du renderer
 			.maxTrackingRange(8)
 	);
 
 	public static final EntityType<HordeMinionEntity> HORDE_MINION = register(
 		"horde_minion",
 		EntityType.Builder.create(HordeMinionEntity::new, SpawnGroup.MONSTER)
-			.dimensions(0.6f, 1.95f)
+			.dimensions(0.51f, 1.66f) // zombie vanilla - 15 %, comme l'échelle du renderer
 			.maxTrackingRange(8)
 	);
 
