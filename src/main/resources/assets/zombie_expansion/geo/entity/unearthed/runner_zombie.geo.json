@@ -130,6 +130,12 @@
 					]
 				},
 				{
+					"name": "right_hand_item",
+					"parent": "right_arm",
+					"pivot": [-5, 10.5, -1],
+					"rotation": [35, 0, 0]
+				},
+				{
 					"name": "armor_right_arm",
 					"parent": "right_arm",
 					"pivot": [-5, 22, 0],
