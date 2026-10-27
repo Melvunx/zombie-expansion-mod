@@ -2,31 +2,38 @@ package net.melvunx.zombieexpansion.client.render;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.melvunx.zombieexpansion.client.model.RunnerZombieModel;
 import net.melvunx.zombieexpansion.entity.RunnerZombieEntity;
 import net.minecraft.client.render.entity.EntityRendererFactory;
-import net.minecraft.client.render.entity.ZombieBaseEntityRenderer;
-import net.minecraft.client.render.entity.model.EntityModelLayers;
-import net.minecraft.client.render.entity.model.ZombieEntityModel;
-import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.client.render.model.json.ModelTransformationMode;
+import net.minecraft.item.ItemStack;
+import software.bernie.geckolib.cache.object.GeoBone;
+import software.bernie.geckolib.renderer.GeoEntityRenderer;
+import software.bernie.geckolib.renderer.layer.BlockAndItemGeoLayer;
 
 /**
- * Renderer provisoire du coureur : modèle et texture vanilla du zombie, aminci de 20 % en largeur pour
- * qu'on le reconnaisse comme « maigre ». Hérite de ZombieBaseEntityRenderer pour garder l'armure et les
- * objets tenus. Sera remplacé par un modèle Blockbench (la hitbox de l'EntityType ne change pas).
+ * Renderer GeckoLib du coureur, à l'échelle du modèle (hitbox vanilla de l'EntityType). Deux calques :
+ * l'armure ({@link ZombieArmorGeoLayer}, os par os) et l'objet tenu en main principale, dessiné sur l'os
+ * {@code right_hand_item} qui suit le bras droit pendant les animations. La texture (surface ou grottes)
+ * vient de {@link RunnerZombieModel}.
  */
 @Environment(EnvType.CLIENT)
-public class RunnerZombieRenderer extends ZombieBaseEntityRenderer<RunnerZombieEntity, ZombieEntityModel<RunnerZombieEntity>> {
-	private static final float WIDTH_SCALE = 0.8f;
+public class RunnerZombieRenderer extends GeoEntityRenderer<RunnerZombieEntity> {
+	private static final String HAND_BONE = "right_hand_item";
 
 	public RunnerZombieRenderer(EntityRendererFactory.Context context) {
-		super(context,
-			new ZombieEntityModel<>(context.getPart(EntityModelLayers.ZOMBIE)),
-			new ZombieEntityModel<>(context.getPart(EntityModelLayers.ZOMBIE_INNER_ARMOR)),
-			new ZombieEntityModel<>(context.getPart(EntityModelLayers.ZOMBIE_OUTER_ARMOR)));
-	}
+		super(context, new RunnerZombieModel());
+		addRenderLayer(new ZombieArmorGeoLayer<>(this));
+		addRenderLayer(new BlockAndItemGeoLayer<>(this) {
+			@Override
+			protected ItemStack getStackForBone(GeoBone bone, RunnerZombieEntity entity) {
+				return HAND_BONE.equals(bone.getName()) ? entity.getMainHandStack() : null;
+			}
 
-	@Override
-	protected void scale(RunnerZombieEntity entity, MatrixStack matrices, float amount) {
-		matrices.scale(WIDTH_SCALE, 1.0f, WIDTH_SCALE);
+			@Override
+			protected ModelTransformationMode getTransformTypeForStack(GeoBone bone, ItemStack stack, RunnerZombieEntity entity) {
+				return ModelTransformationMode.THIRD_PERSON_RIGHT_HAND;
+			}
+		});
 	}
 }

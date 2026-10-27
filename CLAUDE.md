@@ -295,7 +295,10 @@ Membres actuels : zombie vanilla et zombie villageois (tag `unearthed_faction`, 
 - **Stats** : 12 PV, vitesse **×1,4** (0,23 → 0,322), jamais bébé, brûle au soleil. **Dégâts de mêlée 1 PV (0,5 cœur) sous le zombie vanilla** à chaque difficulté : 1,5 / 2 / 3,5 PV (`FixedDamageZombieEntity`, `DifficultyDamage.Table`). Plus faible que le vanilla : dans le budget, pas une exception.
 - **Idée** : sa vitesse est sa force, on ne peut pas le semer à pied, donc on se bat en reculant.
 - **Spawn** : règle des Déterrés (`Faction.allowsUnearthedSpawn`), part de **8 %** du poids du zombie vanilla, comme le lanceur (groupes de 1 à 2) ; total des parts 21 % sur 35 %. Les pourcentages seront réglés d'un coup quand tous les membres existeront.
-- **Rendu provisoire** : modèle et texture vanilla, aminci de 20 % en largeur (`RunnerZombieRenderer`) ; modèle Blockbench à venir. Loot : chair putréfiée 0-2.
+- **Rendu GeckoLib** (`RunnerZombieModel`, `RunnerZombieRenderer`, `runner_zombie.*` dans `unearthed/`) : silhouette de sprinter penchée, bandeau et haillons. Animations `idle` (échauffement, à l'arrêt), `walk`, `run` (dès qu'il a une cible, `isAttacking()`) et trois attaques `attack_jab` / `attack_swipe` / `attack_lunge` tirées au hasard dans `tryAttack` (même remarque que le lanceur : le coup visuel arrive après les dégâts).
+- **Variante des grottes** : texture `runner_zombie_cave.png` si le ciel n'est pas visible à l'apparition (`initialize`, même critère `isSkyVisible` que le gelé et le chef ; vaut aussi pour l'œuf et `/summon`). État `DataTracker` `CAVE`, NBT `Cave` ; choisie une fois, elle ne change plus.
+- **Équipement sans restriction** (comme le zombie vanilla et le squelette) : équipement initial et ramassage d'objets vanilla, aucune surcharge. Le modèle a le squelette d'armure commun, dessiné par `ZombieArmorGeoLayer` (réutilisable : il suffit que le modèle ait les mêmes os `armor_*`), et l'objet tenu est dessiné sur l'os `right_hand_item` (ajouté au `.geo.json`, mêmes repères que le sous-fifre : pivot au bout du bras, rotation +35° sur X).
+- Loot : chair putréfiée 0-2.
 
 #### Stats des exceptions
 
